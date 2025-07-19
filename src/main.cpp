@@ -1,6 +1,6 @@
 #include <iostream>
 
-#include "core/Game.h"
+#include "core/Game.hpp"
 #include "raylib.h"
 
 enum class game_state
@@ -18,7 +18,6 @@ int main()
     
     Game game(800, 600);
     game.run();
-
 
 
     // // -> inicialización de ventana
