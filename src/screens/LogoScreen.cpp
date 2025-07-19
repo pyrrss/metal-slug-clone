@@ -2,21 +2,30 @@
 #include <raylib.h>
 
 #include "LogoScreen.hpp"
+#include "../managers/TextureManager.hpp"
+
 
 LogoScreen::LogoScreen()
 {
+    // TODO: cargar logo acá
+    // this->m_logo_texture = LoadTexture("../../assets/logo.png");
 
+}
 
+LogoScreen::~LogoScreen()
+{
+    std::cout << "LOG: LogoScreen destruido" << std::endl;
+    // UnloadTexture(this->m_logo_texture);
 }
 
 void LogoScreen::init()
 {
-
+    
 }
 
-void LogoScreen::update()
+game_screen LogoScreen::update()
 {
-
+    return game_screen::NONE;
 }
 
 void LogoScreen::render()
@@ -25,11 +34,9 @@ void LogoScreen::render()
     
     ClearBackground(RAYWHITE);
 
-    DrawText("AQUÍ DEBERÍA IR UN LOGO", 100, 200, 40, LIGHTGRAY);
+    DrawTexture(TextureManager::get_texture("logo"), 0, 0, WHITE);
     
-}
-
-void LogoScreen::de_init()
-{
+    DrawText("Metal Slug Clone compa", (GetScreenWidth() / 2) - 180, (GetScreenHeight() / 2), 30, LIGHTGRAY);
 
 }
+

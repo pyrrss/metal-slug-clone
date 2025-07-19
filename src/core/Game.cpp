@@ -1,9 +1,15 @@
 #include <iostream>
 #include <string>
 
-#include "Game.hpp"
 #include "raylib.h"
 
+#include "Game.hpp"
+
+#include "../screens/LogoScreen.hpp"
+#include "../screens/TitleScreen.hpp"
+#include "../screens/OptionsScreen.hpp"
+
+#include "../managers/TextureManager.hpp"
 
 Game::Game(int screen_width, int screen_height)
 {
@@ -17,7 +23,11 @@ Game::~Game()
 {
     // TODO: destruir todo
     
+    std::cout << "LOG: Game destruido" << std::endl;
+
+    
     CloseWindow();
+
 }
 
 void Game::run()
@@ -28,6 +38,12 @@ void Game::run()
     
     InitWindow(m_screen_width, m_screen_height, "Metal Slug Clone");
     SetTargetFPS(60);
+
+    // -> CARGA DE ASSETS 
+    // TODO: luego encapsular en una clase TextureManager o algo así, que se encague de cargar los assets y que
+    // se pueda llamar desde cualquier parte 
+    
+    TextureManager::load_all_textures();
     
     // -------------------------------------------------------------
     
@@ -35,22 +51,33 @@ void Game::run()
     int frames_counter = 0; // -> contador de frames
     
     change_screen(game_screen::LOGO); // -> se muestra primero pantalla de logo
+    game_screen next_screen = game_screen::NONE;
 
-    // -> game-loop // -> se muestra primero pantalla de logo
-    while (!WindowShouldClose()) // NOTE: WindowShouldClose detetta si se ha pulsado ESC o botón para cerrar
+    // -> game-loop 
+    while (!WindowShouldClose()) // NOTE: WindowShouldClose detecta si se ha pulsado ESC o botón para cerrar
     {
-        frames_counter++;
-        
         // -> se muestra pantalla de logo por 2 segundos y luego se va a la pantalla de títutlo
-        // if (frames_counter >= 120)
-        // {
-        //     change_screen(game_screen::TITLE);
-        // }
+        if (m_current_screen_type == game_screen::LOGO && frames_counter >= 180)
+        {
+            change_screen(game_screen::TITLE);
+        }
 
 
         // TODO: Update cosas acá
         // --------------------------------------------------------------
+        frames_counter++;
 
+        // -> cambio de pantalla
+        if (m_current_screen != nullptr)
+        {
+            next_screen = m_current_screen->update();
+            
+            if (next_screen != game_screen::NONE)
+            {
+                change_screen(next_screen);
+            }
+
+        }
 
         // --------------------------------------------------------------
     
@@ -59,14 +86,8 @@ void Game::run()
         // ----------------------- RENDER -------------------------------
         // TODO: Render cosas acá (luego ver donde colocar esto o lo que sea)
         BeginDrawing();
-            
-            ClearBackground(RAYWHITE);    
-            
-            DrawText("Game::run()", 200, 300, 40, LIGHTGRAY);
-
-            DrawText(("Frames counter: " + std::to_string(frames_counter)).c_str(), 200, 350, 40, LIGHTGRAY);
-
             DrawFPS(10, 10);
+            DrawText(TextFormat("Frames: %i", frames_counter), 10, 40, 20, BLACK);
 
 
             if (m_current_screen != nullptr)
@@ -86,8 +107,7 @@ void Game::change_screen(game_screen screen_type)
 {
     if (m_current_screen != nullptr)
     {
-        m_current_screen->de_init();
-        delete m_current_screen; // -> se borra pantalla actual
+        delete m_current_screen; // -> se borra pantalla actual (y se llama a su destructor)
     }
 
     m_current_screen_type = screen_type;
@@ -101,12 +121,12 @@ void Game::change_screen(game_screen screen_type)
 
         case game_screen::TITLE:
         {
-            m_current_screen = nullptr;
+            m_current_screen = new TitleScreen();
         } break;
 
         case game_screen::OPTIONS:
         {
-            m_current_screen = nullptr;
+            m_current_screen = new OptionsScreen();
         } break;
 
         case game_screen::GAMEPLAY:
@@ -123,7 +143,7 @@ void Game::change_screen(game_screen screen_type)
 
     }
     
-    m_current_screen->init();
+    // m_current_screen->init();
 
 
 }

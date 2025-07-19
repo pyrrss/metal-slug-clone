@@ -2,17 +2,20 @@
 #define LOGO_SCREEN_HPP
 
 #include "Screen.hpp"
+#include "raylib.h"
 
 class LogoScreen : public Screen
 {
+    private:
+        Texture2D m_logo_texture;
+
     public:
         LogoScreen();
-        ~LogoScreen() = default;
+        ~LogoScreen();
 
         void init() override;
-        void update() override;
+        game_screen update() override;
         void render() override;
-        void de_init() override;
 };
 
 

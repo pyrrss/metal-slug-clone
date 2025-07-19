@@ -2,11 +2,12 @@
 #define GAME_HPP
 
 #include "../screens/Screen.hpp"
-#include "../screens/LogoScreen.hpp"
 
 class Game
 {
     private: // -> atributos privados
+        
+        // TODO: crear funcionalidad para ajustar tamaño de pantalla
         int m_screen_width;
         int m_screen_height;
     
