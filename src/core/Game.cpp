@@ -8,6 +8,7 @@
 #include "../screens/LogoScreen.hpp"
 #include "../screens/TitleScreen.hpp"
 #include "../screens/OptionsScreen.hpp"
+#include "../screens/GameplayScreen.hpp"
 
 #include "../managers/TextureManager.hpp"
 
@@ -25,7 +26,7 @@ Game::~Game()
     
     std::cout << "LOG: Game destruido" << std::endl;
 
-    
+    TextureManager::unload_all_textures();
     CloseWindow();
 
 }
@@ -131,7 +132,7 @@ void Game::change_screen(game_screen screen_type)
 
         case game_screen::GAMEPLAY:
         {
-            m_current_screen = nullptr;
+            m_current_screen = new GameplayScreen();
         } break;
 
         case game_screen::GAME_OVER:
@@ -143,7 +144,7 @@ void Game::change_screen(game_screen screen_type)
 
     }
     
-    // m_current_screen->init();
+    m_current_screen->init();
 
 
 }

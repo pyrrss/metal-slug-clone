@@ -14,6 +14,8 @@ void TextureManager::load_all_textures()
     Texture2D logo_texture = LoadTexture("assets/raylib_144x144.png");
     s_textures["logo"] = logo_texture;
 
+    Texture2D player_iddle_texture = LoadTexture("assets/player/IDLE.png");
+    s_textures["player_idle"] = player_iddle_texture;
 
 }
 
@@ -22,6 +24,7 @@ void TextureManager::unload_all_textures()
     // TODO: todas las texturas se liberan aquí
 
     UnloadTexture(s_textures["logo"]);
+    UnloadTexture(s_textures["player_idle"]);
 }
 
 Texture2D TextureManager::get_texture(const std::string& name)
