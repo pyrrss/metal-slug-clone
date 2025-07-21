@@ -1,20 +1,41 @@
 #ifndef PLAYER_HPP
 #define PLAYER_HPP
 
+#include <map>
+
 #include "raylib.h"
 
 #include "Entity.hpp"
+#include "../core/Animation.hpp"
+
+enum class PlayerState
+{
+    IDLE,
+    RUNNING,
+    JUMPING,
+    HURT,
+    DYING
+};
+
 
 class Player : public Entity
 {
     private:
-        Texture2D m_idle_texture;
-        Rectangle m_idle_frames[10]; 
-        int m_idle_frames_count;
-        int m_frames_counter;
-        int m_current_frame;
+
+        // -> vars para controlar animaciones
+        float m_frames_timer;
         int m_frames_speed;
+        int m_current_animation_frame;
+        int m_facing_direction; // -> dirección donde se mira := 1 derecha, -1 izquierda, 0 vertical?
+
         float m_scale;
+        
+        PlayerState m_player_state;
+        std::map<PlayerState, Animation> m_animations; // -> mapea estado de jugador a una animación
+        
+
+    private:
+        void setup_animations();
 
 
     public:

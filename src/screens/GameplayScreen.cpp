@@ -16,6 +16,8 @@ GameplayScreen::~GameplayScreen()
 {
     std::cout << "LOG: GameplayScreen destruido" << std::endl;
 
+        
+
     for (Entity* entity : m_entities)
     {
         delete entity;
@@ -30,7 +32,7 @@ void GameplayScreen::init()
     Vector2 player_size = { 20, 34 };
     Vector2 player_velocity = { 0, 0 };
     
-    Player* player = new Player(player_pos, player_size, player_velocity, 3);
+    Player* player = new Player(player_pos, player_size, player_velocity, 4);
     m_entities.push_back(player);
 }
 

@@ -17,6 +17,9 @@ void TextureManager::load_all_textures()
     Texture2D player_iddle_texture = LoadTexture("assets/player/IDLE.png");
     s_textures["player_idle"] = player_iddle_texture;
 
+    Texture2D player_running_texture = LoadTexture("assets/player/RUN.png");
+    s_textures["player_running"] = player_running_texture;
+
 }
 
 void TextureManager::unload_all_textures()
