@@ -27,12 +27,15 @@ GameplayScreen::~GameplayScreen()
 
 void GameplayScreen::init()
 {
-    // NOTE: por ahora para probar añadiré entidades acá
+    m_floor = { 0, (float) GetScreenHeight() - 50, (float) GetScreenWidth(), 50 };
+
+    // NOTE: TODO ESTO ES PARA TESTEAR COSAS Y FUNCIONALIDADES 
+
     Vector2 player_pos = { (float) GetScreenWidth() / 2, (float) GetScreenHeight() / 2};
-    Vector2 player_size = { 20, 34 };
-    Vector2 player_velocity = { 0, 0 };
-    
-    Player* player = new Player(player_pos, player_size, player_velocity, 4);
+    Vector2 player_velocity = { 0.0f, 0.0f };
+    float player_scale = 4.0f;   
+
+    Player* player = new Player(player_pos, player_velocity, player_scale);
     m_entities.push_back(player);
 }
 
@@ -79,11 +82,25 @@ game_screen GameplayScreen::update()
     }
 
 
-    // --- Actualización de Entidades ---
+    // --- ACTUALIZACION DE ENTIDADES ---
+    
+    // -> se actualizan todas las entidades y se c
     for (Entity* entity : m_entities)
     {
         entity->update();
     }
+ 
+
+    // -> colisiones entidad-suelo
+    for (Entity* entity : m_entities)
+    {
+        if (CheckCollisionRecs(entity->get_bounding_box(), m_floor))
+        {
+            entity->on_collision_with_floor(m_floor);
+        }
+    }
+
+    // TODO: hacer colisiones entidad-entidad
 
     return game_screen::NONE;
 }
@@ -101,6 +118,8 @@ void GameplayScreen::render()
     {
         entity->render();
     }
+
+    DrawRectangleRec(m_floor, DARKGRAY);
 
 
 }

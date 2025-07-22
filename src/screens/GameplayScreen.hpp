@@ -12,6 +12,9 @@ class GameplayScreen : public Screen
 {
     private:
         std::vector<Entity*> m_entities; 
+        Rectangle m_floor;
+
+        const float m_gravity = 0.5f;
 
     public:
         GameplayScreen();

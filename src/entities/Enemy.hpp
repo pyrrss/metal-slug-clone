@@ -1,7 +1,7 @@
 #ifndef ENEMY_HPP
 #define ENEMY_HPP
 
-#include "raymath.h"
+#include "raylib.h"
 
 #include "Entity.hpp"
 
@@ -14,7 +14,7 @@ class Enemy : public Entity
         int m_damage;
 
     public:
-        Enemy(Vector2 position, Vector2 size, Vector2 velocity, int health, int damage);
+        Enemy(Vector2 position, Vector2 velocity, int health, int damage);
         ~Enemy() = default;
         
 

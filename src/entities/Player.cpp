@@ -1,20 +1,26 @@
 #include <cmath>
 #include <iostream>
 
+#include "Entity.hpp"
 #include "raylib.h"
+#include "raymath.h"
 
 #include "Player.hpp"
 #include "../managers/TextureManager.hpp"
 
 
-Player::Player(Vector2 position, Vector2 size, Vector2 velocity, float scale) : Entity(position, size, velocity)
+Player::Player(Vector2 position, Vector2 velocity, float scale) : Entity(position, velocity)
 {
     // se llama inmediatamente al constructor de Entity al instanciar jugador y se le pasan sus parámentros (posicion, tamaño, velocidad)
-    this->m_scale = scale;
-    this->m_velocity = velocity;
+    this->m_movement_direction = {0, 0};
     this->m_position = position;
-    this->m_player_state = PlayerState::IDLE;
+    this->m_player_state = PlayerState::IDLE; // -> por defecto está quieto
     this->m_facing_direction = 1; // -> por defecto mira a la derecha
+    this->m_velocity = velocity;
+    this->m_scale = scale;
+    this->m_gravity_scale = 1.0f;
+
+    this->m_entity_type = EntityType::PLAYER;
 
     setup_animations();
 }
@@ -57,8 +63,28 @@ void Player::update()
 
     // TODO: actualizar otras cosas específicas del jugador (movimiento, input, ...)
     // -------------------------------------------------------------------------------
-    float speed = 200.0f; // -> velocidad de movimiento en píxeles por segundo
-    m_position = Vector2Add(m_position, Vector2Scale(m_velocity, speed * GetFrameTime()));
+    
+    // -> se actualiza el rectangulo del jugador según el frame actual y escala
+    Rectangle current_frame_rect = current_animation.frames[m_current_animation_frame];
+    m_bounding_box.width = current_frame_rect.width * m_scale;
+    m_bounding_box.height = current_frame_rect.height * m_scale;
+
+    // -> se aplica velocidad de movimiento según dirección y velocidad del jugador
+    float speed = 400.0f; // -> velocidad de movimiento en píxeles por segundo
+    m_velocity.x = m_movement_direction.x * speed;
+
+    // -> se aplica gravedad
+    const float GRAVITY = 980.0f; // Aceleración gravitacional en píxeles/segundo^2
+    m_velocity.y += m_gravity_scale * GRAVITY * GetFrameTime();
+
+    // -> se actualiza la posición según velocidad y dirección
+    m_position = Vector2Add(m_position, Vector2Scale(m_velocity, GetFrameTime()));
+
+    // -> se actualiza rectangulo del jugador
+    m_bounding_box.x = m_position.x;
+    m_bounding_box.y = m_position.y;
+
+
     // ------------------------------------------------------------------------------
 }
 
@@ -82,9 +108,37 @@ void Player::render()
         fabsf(source_rec.width) * m_scale,
         source_rec.height * m_scale
     };
-    
+ 
+
     DrawTexturePro(current_animation.texture, source_rec, dest_rec, {0, 0}, 0.0f, WHITE);
+
+    // ------------------ DEBUG -----------------
+    DrawLine(m_bounding_box.x, m_bounding_box.y, m_bounding_box.x + m_bounding_box.width, m_bounding_box.y, GREEN); // -> linea superior
+    DrawLine(m_bounding_box.x + m_bounding_box.width, m_bounding_box.y, m_bounding_box.x + m_bounding_box.width, m_bounding_box.y + m_bounding_box.height, GREEN); // -> linea derecha
+    DrawLine(m_bounding_box.x + m_bounding_box.width, m_bounding_box.y + m_bounding_box.height, m_bounding_box.x, m_bounding_box.y + m_bounding_box.height, GREEN); // -> linea inferior
+    DrawLine(m_bounding_box.x, m_bounding_box.y, m_bounding_box.x, m_bounding_box.y + m_bounding_box.height, GREEN); // -> linea izquierda
+
 }
+
+// --- COLISIONES ---
+
+void Player::on_collision_with_floor(Rectangle floor)
+{
+    m_velocity.y = 0;
+    m_position.y = floor.y - m_bounding_box.height;
+}
+
+void Player::on_collision_with_entity(Entity* entity)
+{
+    if (entity->get_entity_type() == EntityType::ENEMY)
+    {
+        std::cout << "LOG: jugador colisiona con enemigo, no hace nada aún" << std::endl;
+    }
+}
+
+
+
+
 
 // --- ACCIONES ---
 
@@ -106,7 +160,7 @@ void Player::move(Vector2 direction)
         m_current_animation_frame = 0;
     }
 
-    m_velocity = Vector2Normalize(direction);
+    m_movement_direction = Vector2Normalize(direction);
 }
 
 void Player::stop_move()
@@ -117,11 +171,12 @@ void Player::stop_move()
         m_current_animation_frame = 0;
     }
 
-    m_velocity = { 0, 0 };
+    m_movement_direction = { 0, 0 };
 }
 
 void Player::jump()
 {
+    // TODO: hacer lógica de salto y animación de salto
     // m_player_state = PlayerState::JUMPING;
     std::cout << "LOG: jugador salta, aun no hace nada" << std::endl;
 }
