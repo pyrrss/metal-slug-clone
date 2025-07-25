@@ -26,6 +26,11 @@ void Soldier::on_collision_with_floor(Rectangle floor)
 
 }
 
+void Soldier::on_collision_with_platform(Platform* platform)
+{
+    // los soldados no hacen nada al colisionar con plataformas
+}
+
 void Soldier::on_collision_with_entity(Entity* entity)
 {
 

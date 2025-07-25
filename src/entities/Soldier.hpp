@@ -12,9 +12,10 @@ class Soldier : public Enemy
 
         void update() override;
         void render() override;
+    
         void on_collision_with_floor(Rectangle floor) override;
         void on_collision_with_entity(Entity* entity) override;
-
+        void on_collision_with_platform(Platform* platform) override;
 };
 
 

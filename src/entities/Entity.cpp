@@ -1,19 +1,12 @@
-#include <iostream>
-
 #include "Entity.hpp"
 
-Entity::Entity(Vector2 position, Vector2 velocity)
+Entity::Entity(Vector2 position, Vector2 velocity) : GameObject(position)
 {
     this->m_position = position;
     this->m_velocity = velocity;
 }
 
-EntityType Entity::get_entity_type() const
+void Entity::on_collision_with_platform(Platform* platform)
 {
-    return m_entity_type;
-}
-
-Rectangle Entity::get_bounding_box() const
-{
-    return m_bounding_box;
+    // por defecto, las entidades no hacen nada al colisionar con plataformas
 }

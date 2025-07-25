@@ -8,13 +8,16 @@
 #include "Screen.hpp"
 
 // NOTE: por ahora esta pantalla será la que se use para mostrar funcionalidades del juego
+#include "../entities/Player.hpp"
+#include "../entities/Platform.hpp"
+
 class GameplayScreen : public Screen
 {
     private:
-        std::vector<Entity*> m_entities; 
-        Rectangle m_floor;
 
-        const float m_gravity = 0.5f;
+        Rectangle m_floor;
+        std::vector<Entity*> m_entities;
+        std::vector<Platform*> m_platforms;
 
     public:
         GameplayScreen();

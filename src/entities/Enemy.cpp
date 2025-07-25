@@ -9,6 +9,6 @@ Enemy::Enemy(Vector2 position, Vector2 velocity, int health, int damage) : Entit
     this->m_health = health;
     this->m_damage = damage;
     
-    this->m_entity_type = EntityType::ENEMY;
+    this->m_object_type = GameObjectType::ENEMY;
 
 }

@@ -5,6 +5,7 @@
 
 #include "GameplayScreen.hpp"
 #include "../entities/Player.hpp"
+#include "../entities/Platform.hpp"
 
 GameplayScreen::GameplayScreen()
 {
@@ -23,6 +24,11 @@ GameplayScreen::~GameplayScreen()
         delete entity;
     }
 
+    for (Platform* platform : m_platforms)
+    {
+        delete platform;
+    }
+
 }
 
 void GameplayScreen::init()
@@ -37,6 +43,11 @@ void GameplayScreen::init()
 
     Player* player = new Player(player_pos, player_velocity, player_scale);
     m_entities.push_back(player);
+
+    // -> se crean algunas plataformas de prueba
+    // m_platforms.push_back(new Platform({ 500, 500 }, 200, 20));
+    // m_platforms.push_back(new Platform({ 800, 400 }, 200, 20));
+    // m_platforms.push_back(new Platform({ 200, 300 }, 200, 20));
 }
 
 game_screen GameplayScreen::update()
@@ -79,6 +90,11 @@ game_screen GameplayScreen::update()
         {
             player->jump();
         }
+
+        if (IsKeyPressed(KEY_E))
+        {
+            player->dash();
+        }
     }
 
 
@@ -100,6 +116,18 @@ game_screen GameplayScreen::update()
         }
     }
 
+    // -> colisiones entidad-plataforma
+    for (Entity* entity : m_entities)
+    {
+        for (Platform* platform : m_platforms)
+        {
+            if (CheckCollisionRecs(entity->get_bounding_box(), platform->get_bounding_box()))
+            {
+                entity->on_collision_with_platform(platform);
+            }
+        }
+    }
+
     // TODO: hacer colisiones entidad-entidad
 
     return game_screen::NONE;
@@ -117,6 +145,11 @@ void GameplayScreen::render()
     for (Entity* entity : m_entities)
     {
         entity->render();
+    }
+
+    for (Platform* platform : m_platforms)
+    {
+        platform->render();
     }
 
     DrawRectangleRec(m_floor, DARKGRAY);
