@@ -1,4 +1,6 @@
 #include <iostream>
+#include <memory>
+#include <algorithm>
 
 #include "raylib.h"
 #include "raymath.h"
@@ -6,6 +8,7 @@
 #include "GameplayScreen.hpp"
 #include "../entities/Player.hpp"
 #include "../entities/Platform.hpp"
+
 
 GameplayScreen::GameplayScreen()
 {
@@ -17,17 +20,17 @@ GameplayScreen::~GameplayScreen()
 {
     std::cout << "LOG: GameplayScreen destruido" << std::endl;
 
-        
 
-    for (Entity* entity : m_entities)
-    {
-        delete entity;
-    }
-
-    for (Platform* platform : m_platforms)
-    {
-        delete platform;
-    }
+    // NOTE: ya no es necesario delete, ya que se está usando unique_ptr y se gestiona automáticamente
+    // for (Entity* entity : m_entities)
+    // {
+    //     delete entity;
+    // }
+    //
+    // for (Platform* platform : m_platforms)
+    // {
+    //     delete platform;
+    // }
 
 }
 
@@ -41,8 +44,9 @@ void GameplayScreen::init()
     Vector2 player_velocity = { 0.0f, 0.0f };
     float player_scale = 4.0f;   
 
-    Player* player = new Player(player_pos, player_velocity, player_scale);
-    m_entities.push_back(player);
+    std::unique_ptr<Player> player = std::make_unique<Player> (player_pos, player_velocity, player_scale);
+    player->equip_glock();
+    m_entities.push_back(std::move(player));
 
     // -> se crean algunas plataformas de prueba
     // m_platforms.push_back(new Platform({ 500, 500 }, 200, 20));
@@ -54,10 +58,10 @@ game_screen GameplayScreen::update()
 {
     // --- Manejo de Input ---
     Player* player = nullptr;
-    for (Entity* entity : m_entities)
+    for (const std::unique_ptr<Entity>& entity : m_entities)
     {
         // -> se intenta castear a Player
-        player = dynamic_cast<Player*>(entity);
+        player = dynamic_cast<Player*>(entity.get());
         if (player)
         {
             break; 
@@ -91,24 +95,49 @@ game_screen GameplayScreen::update()
             player->jump();
         }
 
-        if (IsKeyPressed(KEY_E))
+        if (IsKeyPressed(KEY_LEFT_SHIFT) || IsKeyPressed(KEY_RIGHT_SHIFT))
         {
             player->dash();
         }
+        
+        // TODO: ver si hay un mejor boton para disparar
+        if (IsKeyPressed(KEY_E))
+        {
+            std::unique_ptr<Bullet> bullet = player->get_current_weapon()->shoot();
+            
+            if (bullet != nullptr)
+            {
+                m_bullets.push_back(std::move(bullet));
+            }
+        }
+
+
     }
 
 
     // --- ACTUALIZACION DE ENTIDADES ---
     
-    // -> se actualizan todas las entidades y se c
-    for (Entity* entity : m_entities)
+    // -> se actualizan todas las entidades 
+    for (const std::unique_ptr<Entity>& entity : m_entities)
     {
         entity->update();
     }
- 
+    
+    for (const std::unique_ptr<Bullet>& bullet : m_bullets)
+    {
+        bullet->update();
+    }
+
+    // -> limpieza de bullets inactivas
+    m_bullets.erase( // NOTE: no entiendo esta sintaxis rara 
+            std::remove_if(m_bullets.begin(), m_bullets.end(), [](const std::unique_ptr<Bullet>& bullet) {
+                return !bullet->is_active();
+            }),
+            m_bullets.end()
+    );
 
     // -> colisiones entidad-suelo
-    for (Entity* entity : m_entities)
+    for (const std::unique_ptr<Entity>& entity : m_entities)
     {
         if (CheckCollisionRecs(entity->get_bounding_box(), m_floor))
         {
@@ -117,13 +146,13 @@ game_screen GameplayScreen::update()
     }
 
     // -> colisiones entidad-plataforma
-    for (Entity* entity : m_entities)
+    for (std::unique_ptr<Entity>& entity : m_entities)
     {
-        for (Platform* platform : m_platforms)
+        for (std::unique_ptr<Platform>& platform : m_platforms)
         {
             if (CheckCollisionRecs(entity->get_bounding_box(), platform->get_bounding_box()))
             {
-                entity->on_collision_with_platform(platform);
+                entity->on_collision_with_platform(dynamic_cast<Platform*>(platform.get()));
             }
         }
     }
@@ -142,15 +171,16 @@ void GameplayScreen::render()
     DrawText("Pantalla de juego", GetScreenWidth() / 2 - font_width / 2, 50, 40, BLACK);
     
     // -> renderizar entidades
-    for (Entity* entity : m_entities)
+    for (std::unique_ptr<Entity>& entity : m_entities)
     {
         entity->render();
     }
 
-    for (Platform* platform : m_platforms)
+    for (std::unique_ptr<Bullet>& bullet : m_bullets)
     {
-        platform->render();
+        bullet->render();
     }
+
 
     DrawRectangleRec(m_floor, DARKGRAY);
 

@@ -20,10 +20,11 @@ class Entity : public GameObject
         virtual ~Entity() = default;
 
         virtual void update() = 0;
-        
+        virtual void render() = 0;
+
         virtual void on_collision_with_floor(Rectangle floor) = 0;
         virtual void on_collision_with_entity(Entity* entity) = 0;
-        virtual void on_collision_with_platform(Platform* platform);
+        virtual void on_collision_with_platform(Platform* platform) = 0;
 
 };
 

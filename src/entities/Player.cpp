@@ -8,8 +8,7 @@
 
 #include "Player.hpp"
 #include "../managers/TextureManager.hpp"
-
-
+#include "../entities/WeaponFactory.hpp"
 
 
 Player::Player(Vector2 position, Vector2 velocity, float scale) : Entity(position, velocity)
@@ -25,31 +24,31 @@ Player::Player(Vector2 position, Vector2 velocity, float scale) : Entity(positio
     this->m_object_type = GameObjectType::PLAYER;
 
     // --- Inicialización de Dash ---
-    this->m_can_dash = true;
-    this->m_dash_duration = 0.01f; 
-    this->m_dash_timer = 0.0f;
-    this->m_dash_speed = 800.0f; 
-    this->m_dash_cooldown = 1.0f; // 1 segundo de cooldown
-    this->m_dash_cooldown_timer = 0.0f;
-
+    m_dash_speed = 1000.0f;
+    m_dash_cooldown = 1.5f;
+    m_dash_cooldown_timer = 0.0f;
+    m_dash_duration = 0.3f;
+    m_dash_duration_timer = 0.0f;
+    m_can_dash = true;
+    
+    m_current_weapon = nullptr;
 
     setup_animations();
+    setup_weapon_anchor_points();
 }
 
 Player::~Player() 
 {
     std::cout << "LOG: Player destruido" << std::endl;
-
-    for (auto& animation_pair : m_animations)
+    
+    if (m_current_weapon != nullptr)
     {
-        delete[] animation_pair.second.frames;
+        delete m_current_weapon;
     }
 }
 
 void Player::update()
 {
-    // m_player_state = PlayerState::IDLE;
-
 
     Animation& current_animation = m_animations[m_player_state];
     m_frames_timer += GetFrameTime(); // -> se va sumando los delta times en cada frame
@@ -68,21 +67,27 @@ void Player::update()
             }
             else
             {
-                if (m_player_state == PlayerState::DASHING)
-                {
-                    stop_dash();
-                }
-                else
-                {
-                    m_current_animation_frame = current_animation.frame_count - 1;
-                }
+                m_current_animation_frame = current_animation.frame_count - 1; // -> se queda en último frame
             }
 
         }
     }
     
-    // --- CD DASH ---
-    if (m_dash_cooldown_timer > 0)
+    // ------- DASH ------
+    
+    // -> duracion de dash
+    if (m_player_state == PlayerState::DASHING && m_dash_duration_timer > 0.0f)
+    {
+        m_dash_duration_timer -= GetFrameTime();
+    }
+    else if (m_player_state == PlayerState::DASHING)
+    {
+        stop_dash();
+    }
+
+
+    // -> cooldown de dash
+    if (m_dash_cooldown_timer > 0.0f)
     {
         m_dash_cooldown_timer -= GetFrameTime();
     }
@@ -90,7 +95,6 @@ void Player::update()
     {
         m_can_dash = true;
     }
-
 
     // --- Lógica de movimiento y gravedad ---
     if (m_player_state != PlayerState::DASHING)
@@ -118,7 +122,53 @@ void Player::update()
     m_bounding_box.height = 33 * m_scale; // -> se fija la altura para evitar problemas de colisión
 
 
-    // ------------------------------------------------------------------------------
+    // --- WEAPON ---
+    if (m_current_weapon != nullptr)
+    {
+        auto it = m_weapon_anchor_points.find(m_player_state); // -> se busca el par segun el estado actual del jugador
+        if (it != m_weapon_anchor_points.end())
+        {
+            const std::vector<Vector2>& anchor_points = it->second; // -> se extrae vector de puntos de anclaje
+            
+            // -> se comprueba que el frame actual de la animacion tenga un punto de anclaje definido
+            if (m_current_animation_frame < (int) anchor_points.size())
+            {
+                Rectangle current_frame_rect = current_animation.frames[m_current_animation_frame];
+                Vector2 anchor_point = anchor_points[m_current_animation_frame];
+                
+                // -> se calcula offset del punto de anclaje relativo al frame actual.
+                Vector2 relative_offset = Vector2Subtract(anchor_point, {current_frame_rect.x, current_frame_rect.y});
+                Vector2 scaled_offset = Vector2Scale(relative_offset, m_scale);
+
+                float scaled_sprite_height = fabsf(current_frame_rect.height) * m_scale;
+                float y_offset = m_bounding_box.height - scaled_sprite_height;
+
+
+                // -> se calcula la posicion final del arma
+                Vector2 weapon_position;
+                if (m_facing_direction == 1) // -> mirando a la derecha
+                {
+                    weapon_position = {
+                        m_position.x + scaled_offset.x,
+                        m_position.y + y_offset + scaled_offset.y
+                    };
+                }
+                else if (m_facing_direction == -1)// -> mirando a la izquierda
+                {
+                    float scaled_sprite_width = fabsf(current_frame_rect.width) * m_scale;
+                    weapon_position = {
+                        m_position.x + scaled_sprite_width - scaled_offset.x,
+                        m_position.y + y_offset + scaled_offset.y
+                    };
+                }
+
+                m_current_weapon->update_transform(weapon_position, m_facing_direction);
+            }
+        }
+
+        m_current_weapon->update();
+    }
+
 }
 
 void Player::render()
@@ -151,6 +201,12 @@ void Player::render()
 
     DrawTexturePro(current_animation.texture, source_rec, dest_rec, {0, 0}, 0.0f, WHITE);
 
+    // --- WEAPON ---
+    if (m_current_weapon != nullptr)
+    {
+        m_current_weapon->render();
+    }
+
     // ------------------ DEBUG -----------------
     DrawLine(m_bounding_box.x, m_bounding_box.y, m_bounding_box.x + m_bounding_box.width, m_bounding_box.y, GREEN); // -> linea superior
     DrawLine(m_bounding_box.x + m_bounding_box.width, m_bounding_box.y, m_bounding_box.x + m_bounding_box.width, m_bounding_box.y + m_bounding_box.height, GREEN); // -> linea derecha
@@ -175,50 +231,10 @@ void Player::on_collision_with_floor(Rectangle floor)
 
 void Player::on_collision_with_platform(Platform* platform)
 {
-    Rectangle platform_box = platform->get_bounding_box();
-    Rectangle player_box = get_bounding_box();
-
-    // The player's position in the previous frame
-    Vector2 previous_position = Vector2Subtract(m_position, Vector2Scale(m_velocity, GetFrameTime()));
-    float previous_player_bottom = previous_position.y + player_box.height;
-
-    // 1. Check for landing on the platform (top collision)
-    if (m_velocity.y > 0 &&                                     // Is moving down
-        previous_player_bottom <= platform_box.y &&             // Was above the platform
-        player_box.y + player_box.height >= platform_box.y)     // Is now intersecting the platform top
-    {
-        // Make sure it's not a side graze while falling
-        if ((player_box.x + player_box.width > platform_box.x) && (player_box.x < platform_box.x + platform_box.width))
-        {
-            m_velocity.y = 0;
-            m_position.y = platform_box.y - player_box.height;
-
-            if (m_player_state == PlayerState::JUMPING || m_player_state == PlayerState::DASHING)
-            {
-                m_player_state = PlayerState::IDLE;
-                m_current_animation_frame = 0;
-            }
-            return; // Collision handled, no need to check for sides
-        }
-    }
-
-    if ((player_box.y + player_box.height > platform_box.y) && (player_box.y < platform_box.y + platform_box.height))
-    {
-        if (m_velocity.x < 0 &&                                     
-            player_box.x <= platform_box.x + platform_box.width &&  
-            previous_position.x >= platform_box.x + platform_box.width)
-        {
-            m_position.x = platform_box.x + platform_box.width;
-            m_velocity.x = 0;
-        }
-        else if (m_velocity.x > 0 &&                                
-                 player_box.x + player_box.width >= platform_box.x && 
-                 previous_position.x + player_box.width <= platform_box.x)
-        {
-            m_position.x = platform_box.x - player_box.width;
-            m_velocity.x = 0;
-        }
-    }
+    // Rectangle platform_box = platform->get_bounding_box();
+    // Rectangle player_box = get_bounding_box();
+    
+    // TODO: hacer manejo de colisiones con plataformas, de forma vertical y por los lados
 }
 
 void Player::on_collision_with_entity(Entity* entity)
@@ -269,113 +285,86 @@ void Player::stop_move()
     m_movement_direction = { 0, 0 };
 }
 
-// TODO: EL SALTO NO FUNCIONA CORRECTAMENTE; el problema es que la altura de los rectangulos varia segun la altura de los sprites, y hace que se buguee el salto
 void Player::jump()
 {
-    if (m_player_state == PlayerState::DASHING) return;
-
-    if (m_player_state != PlayerState::JUMPING)
+    if (m_player_state == PlayerState::DASHING || m_player_state == PlayerState::JUMPING) 
     {
-        m_player_state = PlayerState::JUMPING;
-        m_current_animation_frame = 0;
-
-        m_velocity.y = -450.0f;
-
+        return;
     }
+
+    
+    m_player_state = PlayerState::JUMPING;
+    m_current_animation_frame = 0;
+
+    m_velocity.y = -450.0f;
+
 
 }
 
 void Player::dash()
 {
-    if (!m_can_dash || m_player_state == PlayerState::DASHING) return;
+    if (!m_can_dash || m_player_state == PlayerState::DASHING)
+    {
+        return;
+    }
 
     m_player_state = PlayerState::DASHING;
     m_current_animation_frame = 0;
-    
+
     m_can_dash = false;
     m_dash_cooldown_timer = m_dash_cooldown;
 
-    m_gravity_scale = 0.0f; // Ignorar gravedad durante el dash
-    m_velocity.y = 0; // Dash puramente horizontal
+    m_gravity_scale = 0.0f; // -> ignora gravedad durante dash
+    m_velocity.y = 0; // -> dash solo horizontal
     m_velocity.x = m_dash_speed * m_facing_direction;
+
+    m_dash_duration_timer = m_dash_duration;
+
+
 }
 
 void Player::stop_dash()
 {
     m_player_state = PlayerState::IDLE;
-    m_current_animation_frame = 0; 
-    m_velocity = {0, 0};
-    m_gravity_scale = 1.0f; // Restaurar gravedad
+    m_current_animation_frame = 0;
+    m_velocity = { 0, 0 }; // -> restaurar velocidad
+    m_gravity_scale = 1.0f; // -> restaurar gravedad
+    m_dash_duration_timer = 0.0f;
 }
+
+Weapon* Player::get_current_weapon() const
+{
+    return m_current_weapon;
+}
+
+void Player::equip_glock()
+{
+    if (m_current_weapon != nullptr)
+    {
+        delete m_current_weapon;
+    }
+
+    WeaponStats glock_stats = WeaponFactory::create_glock_stats();
+    m_current_weapon = new Weapon(m_position, glock_stats);
+}
+
+void Player::equip_ak47()
+{
+    if (m_current_weapon != nullptr)
+    {
+        delete m_current_weapon;
+    }
+
+    WeaponStats ak47_stats = WeaponFactory::create_ak47_stats();
+    m_current_weapon = new Weapon(m_position, ak47_stats);
+}
+
+
+
+
 
 void Player::setup_animations()
 {
-    // ------------- SPRITESHEETS DE SAMURAI ------------
-
-    // ------------- ANIMACION IDLE -------------
-    // Animation idle_animation;
-    // idle_animation.texture = TextureManager::get_texture("player_idle");
-    // idle_animation.frame_count = 10;
-    // idle_animation.frame_speed = 12; // -> frames por segundo
-    // idle_animation.loops = true;
-    // idle_animation.frames = new Rectangle[idle_animation.frame_count]
-    // {
-    //     { 36, 47, 20, 34 },
-    //     { 132, 48, 21, 33 },
-    //     { 228, 49, 21, 32 },
-    //     { 324, 50, 21, 31 },
-    //     { 419, 49, 21, 32 },
-    //     { 514, 49, 22, 32 },
-    //     { 610, 49, 22, 32 },
-    //     { 706, 49, 22, 32 },
-    //     { 802, 49, 22, 32 },
-    //     { 899, 47, 21, 34 }
-    // };
-    //
-    // m_animations[PlayerState::IDLE] = idle_animation; // -> mapea estado idle a su animación
-    // -------------------------------------------
-
-    // ------------- ANIMACION RUNNING -----------
-    // Animation running_animation;
-    // running_animation.texture = TextureManager::get_texture("player_running");
-    // running_animation.frame_count = 16;
-    // running_animation.frame_speed = 12; // -> frames por segundo
-    // running_animation.loops = true;
-    // running_animation.frames = new Rectangle[running_animation.frame_count]
-    // {
-    //     { 38, 52, 25, 32 },
-    //     { 131, 52, 30, 32 },
-    //     { 227, 51, 32, 32 },
-    //     { 324, 50, 32, 32 },
-    //     { 421, 50, 32, 32 },
-    //     { 518, 52, 30, 32 },
-    //     { 614, 53, 28, 32 },
-    //     { 710, 54, 27, 32 },
-    //     { 806, 54, 27, 32 },
-    //     { 903, 53, 26, 32 },
-    //     { 998, 51, 27, 32 },
-    //     { 1093, 50, 31, 32 },
-    //     { 1191, 51, 28, 32 },
-    //     { 1288, 51, 25, 32 },
-    //     { 1386, 52, 23, 32 },
-    //     { 1482, 53, 23, 32 }
-    // };
-    // 
-    // m_animations[PlayerState::RUNNING] = running_animation; // -> mapea estado corriendo a su animación
-
-    // ------------ ANIMACION JUMPING ------------
-    // Animation jumping_animation;
-    // // TODO: aun no hay spritesheet de salto, por ahora se usa player_idle
-    // jumping_animation.texture = TextureManager::get_texture("player_idle");
-    // jumping_animation.frame_count = 1;
-    // jumping_animation.frame_speed = 12;
-    // jumping_animation.loops = false;
-    // jumping_animation.frames = new Rectangle[jumping_animation.frame_count]
-    // {
-    //     { 36, 47, 20, 34}
-    // };
-    //
-    // m_animations[PlayerState::JUMPING] = jumping_animation;
     
     // ------------- SPRITESHEETS DE WARRIOR --------------
     
@@ -385,7 +374,7 @@ void Player::setup_animations()
     idle_animation.frame_count = 6;
     idle_animation.frame_speed = 10; // -> frames por segundo
     idle_animation.loops = true;
-    idle_animation.frames = new Rectangle[idle_animation.frame_count]
+    idle_animation.frames = 
     {
         { 18, 10, 18, 33 },
         { 82, 10, 18, 33 },
@@ -403,7 +392,7 @@ void Player::setup_animations()
     running_animation.frame_count = 8;
     running_animation.frame_speed = 10; // -> frames por segundo
     running_animation.loops = true;
-    running_animation.frames = new Rectangle[running_animation.frame_count]
+    running_animation.frames =
     {
         { 12, 14, 25, 29 },
         { 77, 14, 24, 26 },
@@ -423,7 +412,7 @@ void Player::setup_animations()
     jumping_animation.frame_count = 3;
     jumping_animation.frame_speed = 10; // -> frames por segundo
     jumping_animation.loops = true;
-    jumping_animation.frames = new Rectangle[jumping_animation.frame_count]
+    jumping_animation.frames =
     {
         { 19, 8, 20, 33 },
         { 83, 8, 20, 33 },
@@ -436,9 +425,9 @@ void Player::setup_animations()
     Animation dashing_animation;
     dashing_animation.texture = TextureManager::get_texture("player_dashing");
     dashing_animation.frame_count = 7;
-    dashing_animation.frame_speed = 10; // -> frames por segundo
+    dashing_animation.frame_speed = 25; // -> frames por segundo
     dashing_animation.loops = false;
-    dashing_animation.frames = new Rectangle[dashing_animation.frame_count]
+    dashing_animation.frames =
     {
         { 13, 15, 29, 28 },
         { 83, 15, 28, 28 },
@@ -451,6 +440,55 @@ void Player::setup_animations()
     
     m_animations[PlayerState::DASHING] = dashing_animation;
 
-    // -> inicializar contador de frames para mantener velocidad de animación
+    // -> inicializar timer de frames para mantener velocidad de animación
     this->m_frames_timer = 0.0f;
+}
+
+void Player::setup_weapon_anchor_points()
+{
+    // TODO: rellenar map de estados a vec de puntos de anclaje   
+    
+    m_weapon_anchor_points[PlayerState::IDLE] = 
+    {
+        { 35, 28 },
+        { 98, 28 },
+        { 164, 27 },
+        { 228, 29 },
+        { 35, 74 },
+        { 99, 72 },
+    };
+
+
+    m_weapon_anchor_points[PlayerState::RUNNING] = 
+    {
+        { 35, 24 },
+        { 99, 21 },
+        { 164, 24 },
+        { 227, 27 },
+        { 40, 71 },
+        { 104, 68 },
+        { 167, 70 },
+        { 225, 72 }
+    };
+
+    m_weapon_anchor_points[PlayerState::JUMPING] = 
+    {
+        { 38, 25 },
+        { 102, 24 },
+        { 166, 25 },
+    };
+    
+    m_weapon_anchor_points[PlayerState::DASHING] =
+    {
+        { 40, 27 },
+        { 110, 27 },
+        { 179, 27 },
+        { 248, 27 },
+        { 35, 70 },
+        { 104, 69 },
+        { 173, 71 }
+    };
+
+
+
 }

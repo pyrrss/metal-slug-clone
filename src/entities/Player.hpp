@@ -8,7 +8,9 @@
 #include "Entity.hpp"
 #include "../core/Animation.hpp"
 #include "Platform.hpp"
+#include "Weapon.hpp"
 
+// maquina estados del jugador
 enum class PlayerState
 {
     IDLE,
@@ -38,18 +40,25 @@ class Player : public Entity
 
         Vector2 m_movement_direction;
 
-        // --- Dash ---
-        bool m_can_dash;
-        float m_dash_duration;
-        float m_dash_timer;
-        float m_dash_speed;
-        float m_dash_cooldown;
-        float m_dash_cooldown_timer;
+        // --- DASH ---
+        float m_dash_speed; // -> velocidad del dash
+        float m_dash_cooldown; // -> tiempo cooldown para el dash
+        float m_dash_cooldown_timer; // -> se usa para contar hacia atrás desde m_dash_cooldown
+        
+        float m_dash_duration; // -> duración del dash
+        float m_dash_duration_timer; // -> para manejar duracion del dash actual
 
+        bool m_can_dash;
+        
+        // --- WEAPONS ---
+        Weapon* m_current_weapon;
+        std::map<PlayerState, std::vector<Vector2>> m_weapon_anchor_points; // -> mapea estado de jugador a un vector de puntos de anclaje (uno para cada 
+                                                                           // frame de la animacion)
+        
 
     private:
         void setup_animations();
-
+        void setup_weapon_anchor_points();
 
     public:
         Player(Vector2 position, Vector2 velocity, float scale);
@@ -68,6 +77,14 @@ class Player : public Entity
         void jump();
         void dash();
         void stop_dash();
+        
+        Weapon* get_current_weapon() const;
+
+        void equip_glock();
+        void equip_ak47();
+        
+
+
 };
 
 

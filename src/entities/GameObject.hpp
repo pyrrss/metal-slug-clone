@@ -9,6 +9,7 @@ enum class GameObjectType
     PLAYER,
     ENEMY,
     OBSTACLE,
+    WEAPON,
     PLATFORM,
     ITEM,
     PROJECTILE,
@@ -28,7 +29,9 @@ class GameObject
         virtual ~GameObject() = default;
 
         virtual void render() = 0;
-        
+        virtual void update() = 0;
+
+
         virtual GameObjectType get_object_type() const;
         virtual Rectangle get_bounding_box() const;
 

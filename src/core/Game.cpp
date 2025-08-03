@@ -1,5 +1,4 @@
 #include <iostream>
-#include <string>
 
 #include "raylib.h"
 
@@ -145,8 +144,7 @@ void Game::change_screen(game_screen screen_type)
     }
     
     m_current_screen->init();
-
-
+    
 }
 
 

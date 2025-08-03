@@ -16,8 +16,10 @@ class GameplayScreen : public Screen
     private:
 
         Rectangle m_floor;
-        std::vector<Entity*> m_entities;
-        std::vector<Platform*> m_platforms;
+        std::vector<std::unique_ptr<Entity>> m_entities;
+        std::vector<std::unique_ptr<Platform>> m_platforms;
+        std::vector<std::unique_ptr<Bullet>> m_bullets;
+
 
     public:
         GameplayScreen();
