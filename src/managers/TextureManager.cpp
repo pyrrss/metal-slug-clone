@@ -37,6 +37,17 @@ void TextureManager::load_all_textures()
 
     Texture2D glock_bullet_texture = LoadTexture("assets/weapons/glock/glock_bullet.png");
     s_textures["glock_bullet"] = glock_bullet_texture;
+
+    
+
+
+    // --------------- ENEMIES --------------
+    
+    // NOTE: todas las texturas y animaciones de skeleton estan en el mismo spritesheet
+    Texture2D skeleton_texture = LoadTexture("assets/enemies/skeleton/skeleton_enemy.png");
+    s_textures["skeleton"] = skeleton_texture;
+
+
 }
 
 void TextureManager::unload_all_textures()
@@ -51,6 +62,7 @@ void TextureManager::unload_all_textures()
     UnloadTexture(s_textures["glock_idle"]);
     UnloadTexture(s_textures["glock_shooting"]);
     UnloadTexture(s_textures["glock_bullet"]);
+    UnloadTexture(s_textures["skeleton"]);
 }
 
 Texture2D TextureManager::get_texture(const std::string& name)

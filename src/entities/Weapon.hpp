@@ -75,7 +75,6 @@ class Weapon : public GameObject
         
         // -> vars para controlar animaciones
         float m_frames_timer;
-        int m_frames_speed;
         int m_current_animation_frame;
         int m_facing_direction; // -> dirección donde se mira := 1 derecha, -1 izquierda, 0 vertical?
 

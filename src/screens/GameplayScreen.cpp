@@ -7,6 +7,8 @@
 
 #include "GameplayScreen.hpp"
 #include "../entities/Player.hpp"
+#include "../entities/Enemy.hpp"
+#include "../entities/EnemyFactory.hpp"
 #include "../entities/Platform.hpp"
 
 
@@ -47,6 +49,16 @@ void GameplayScreen::init()
     std::unique_ptr<Player> player = std::make_unique<Player> (player_pos, player_velocity, player_scale);
     player->equip_glock();
     m_entities.push_back(std::move(player));
+
+    // --- ENEMIES ---
+    EnemyStats skeleton_stats = EnemyFactory::create_skeleton_stats();
+
+    Vector2 enemy_pos = { 700.0f, 500.0f };
+    Vector2 enemy_velocity = { 0.0f, 0.0f };
+    std::unique_ptr<Enemy> enemy = std::make_unique<Enemy> (enemy_pos, enemy_velocity, skeleton_stats);
+    m_entities.push_back(std::move(enemy));
+
+
 
     // -> se crean algunas plataformas de prueba
     // m_platforms.push_back(new Platform({ 500, 500 }, 200, 20));
@@ -121,6 +133,12 @@ game_screen GameplayScreen::update()
     for (const std::unique_ptr<Entity>& entity : m_entities)
     {
         entity->update();
+    
+        // TODO: quitar esto de aqui luego y manejarlo según comportamiento de enemigo
+        if (entity->get_object_type() == GameObjectType::ENEMY)
+        {
+            entity->move(Vector2{ -1.0f, 0.0f });
+        }
     }
     
     for (const std::unique_ptr<Bullet>& bullet : m_bullets)
@@ -129,12 +147,14 @@ game_screen GameplayScreen::update()
     }
 
     // -> limpieza de bullets inactivas
-    m_bullets.erase( // NOTE: no entiendo esta sintaxis rara 
+    m_bullets.erase( // NOTE: no entiendo esta sintaxis rara pero funciona
             std::remove_if(m_bullets.begin(), m_bullets.end(), [](const std::unique_ptr<Bullet>& bullet) {
                 return !bullet->is_active();
             }),
             m_bullets.end()
     );
+
+    // TODO: en un futuro manejar colisiones de mejor forma
 
     // -> colisiones entidad-suelo
     for (const std::unique_ptr<Entity>& entity : m_entities)
@@ -144,7 +164,7 @@ game_screen GameplayScreen::update()
             entity->on_collision_with_floor(m_floor);
         }
     }
-
+    
     // -> colisiones entidad-plataforma
     for (std::unique_ptr<Entity>& entity : m_entities)
     {
@@ -156,8 +176,23 @@ game_screen GameplayScreen::update()
             }
         }
     }
+    
 
-    // TODO: hacer colisiones entidad-entidad
+    // -> colisiones entidad-entidad
+    for (std::unique_ptr<Entity>& entity : m_entities)
+    {
+        for (std::unique_ptr<Entity>& other_entity : m_entities)
+        {
+            if (entity.get() != other_entity.get())
+            {
+                if (CheckCollisionRecs(entity->get_bounding_box(), other_entity->get_bounding_box()))
+                {
+                    entity->on_collision_with_entity(other_entity.get());
+                    other_entity->on_collision_with_entity(entity.get());
+                }
+            }
+        }
+    }
 
     return game_screen::NONE;
 }

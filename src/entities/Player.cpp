@@ -17,7 +17,6 @@ Player::Player(Vector2 position, Vector2 velocity, float scale) : Entity(positio
     this->m_movement_direction = {0, 0};
     this->m_player_state = PlayerState::IDLE; // -> por defecto está quieto
     this->m_facing_direction = 1; // -> por defecto mira a la derecha
-    this->m_velocity = velocity;
     this->m_scale = scale;
     this->m_gravity_scale = 1.0f;
 
@@ -205,7 +204,7 @@ void Player::render()
     if (m_current_weapon != nullptr)
     {
         m_current_weapon->render();
-    }
+    }   
 
     // ------------------ DEBUG -----------------
     DrawLine(m_bounding_box.x, m_bounding_box.y, m_bounding_box.x + m_bounding_box.width, m_bounding_box.y, GREEN); // -> linea superior
@@ -241,8 +240,9 @@ void Player::on_collision_with_entity(Entity* entity)
 {
     if (entity->get_object_type() == GameObjectType::ENEMY)
     {
-        std::cout << "LOG: jugador colisiona con enemigo, no hace nada aún" << std::endl;
+        std::cout << "LOG: Player colisiona con enemigo" << std::endl;
     }
+
 }
 
 

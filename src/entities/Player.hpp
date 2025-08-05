@@ -29,7 +29,6 @@ class Player : public Entity
 
         // -> vars para controlar animaciones
         float m_frames_timer;
-        int m_frames_speed;
         int m_current_animation_frame;
         int m_facing_direction; // -> dirección donde se mira := 1 derecha, -1 izquierda, 0 vertical?
         
@@ -72,8 +71,8 @@ class Player : public Entity
 
 
         // ----------- ACCIONES DEL JUGADOR ----------
-        void move(Vector2 direction);
-        void stop_move();
+        void move(Vector2 direction) override;
+        void stop_move() override;
         void jump();
         void dash();
         void stop_dash();

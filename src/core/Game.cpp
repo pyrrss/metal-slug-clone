@@ -40,9 +40,6 @@ void Game::run()
     SetTargetFPS(60);
 
     // -> CARGA DE ASSETS 
-    // TODO: luego encapsular en una clase TextureManager o algo así, que se encague de cargar los assets y que
-    // se pueda llamar desde cualquier parte 
-    
     TextureManager::load_all_textures();
     
     // -------------------------------------------------------------

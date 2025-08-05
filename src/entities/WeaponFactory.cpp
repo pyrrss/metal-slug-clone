@@ -9,7 +9,7 @@ namespace WeaponFactory
         WeaponStats glock_stats;
         glock_stats.weapon_name = "glock";
         glock_stats.weapon_damage = 10;
-        glock_stats.weapon_scale = 1.5f;
+        glock_stats.weapon_scale = 2.0f;
 
         // ------------- ANIMACIONES ------------
 
@@ -32,7 +32,7 @@ namespace WeaponFactory
         Animation shooting_animation;
         shooting_animation.texture = TextureManager::get_texture("glock_shooting");
         shooting_animation.frame_count = 12;
-        shooting_animation.frame_speed = 14;
+        shooting_animation.frame_speed = 30;
         shooting_animation.loops = false;
         shooting_animation.frames =
         {

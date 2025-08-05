@@ -21,6 +21,9 @@ class Entity : public GameObject
 
         virtual void update() = 0;
         virtual void render() = 0;
+        virtual void move(Vector2 direction) = 0;
+        virtual void stop_move() = 0;
+
 
         virtual void on_collision_with_floor(Rectangle floor) = 0;
         virtual void on_collision_with_entity(Entity* entity) = 0;
