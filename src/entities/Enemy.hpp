@@ -55,13 +55,18 @@ class Enemy : public Entity
             
         void update() override;
         void render() override;
-        void move(Vector2 direction) override;
-        void stop_move() override;
     
 
         void on_collision_with_floor(Rectangle floor) override;
         void on_collision_with_entity(Entity* entity) override;
         void on_collision_with_platform(Platform* platform) override;
+
+        // --- ACCIONES ---
+        void move(Vector2 direction) override;
+        void stop_move() override;
+        void attack();
+        void die();        
+
 
 };
 

@@ -122,10 +122,41 @@ game_screen GameplayScreen::update()
                 m_bullets.push_back(std::move(bullet));
             }
         }
-
-
     }
 
+    // NOTE: por ahora se maneja al enemigo por input manual para testear,
+    // luego se manejará según comportamiento de enemigo
+
+    if (IsKeyPressed(KEY_ONE))
+    {
+        for (std::unique_ptr<Entity>& enemy : m_entities)
+        {
+            if (enemy->get_object_type() == GameObjectType::ENEMY)
+            {
+                Enemy* enemy_ptr = dynamic_cast<Enemy*>(enemy.get());
+                if (enemy_ptr)
+                {
+                    enemy_ptr->attack();
+                }
+            }
+        }
+    }
+
+    if (IsKeyPressed(KEY_TWO))
+    {
+        for (std::unique_ptr<Entity>& enemy : m_entities)
+        {
+            if (enemy->get_object_type() == GameObjectType::ENEMY)
+            {
+                Enemy* enemy_ptr = dynamic_cast<Enemy*>(enemy.get());
+                if (enemy_ptr)
+                {
+                    enemy_ptr->die();
+                }
+            }
+        }
+
+    }
 
     // --- ACTUALIZACION DE ENTIDADES ---
     

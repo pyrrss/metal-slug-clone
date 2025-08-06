@@ -50,6 +50,7 @@ namespace EnemyFactory
         skeleton_stats.enemy_animations[EnemyState::IDLE] = idle_animation;
 
         // TODO: hacer resto de animaciones de SKELETON
+        
         // --- RUNNING ---
         Animation running_animation;
         running_animation.texture = TextureManager::get_texture("skeleton");
@@ -73,6 +74,57 @@ namespace EnemyFactory
         };
         
         skeleton_stats.enemy_animations[EnemyState::RUNNING] = running_animation;
+
+        // --- ATTACKING ---
+        Animation attacking_animation;
+        attacking_animation.texture = TextureManager::get_texture("skeleton");
+        attacking_animation.frame_count = 13;
+        attacking_animation.frame_speed = 10;
+        attacking_animation.loops = false;
+        attacking_animation.frames = 
+        {
+            { 8, 16, 34, 32 },
+            { 69, 16, 37, 32 },
+            { 129, 16, 41, 32 },
+            { 196, 16, 38, 32 },
+            { 269, 8, 51, 40 },
+            { 335, 9, 31, 39 },
+            { 401, 15, 26, 33 },
+            { 466, 15, 25, 33 },
+            { 514, 16, 62, 32 },
+            { 579, 15, 39, 33 },
+            { 646, 12, 36, 36 },
+            { 706, 16, 40, 32 },
+            { 776, 16, 34, 32 }
+        };
+
+        skeleton_stats.enemy_animations[EnemyState::ATTACKING] = attacking_animation;
+
+        // --- DYING ---
+        Animation dying_animation;
+        dying_animation.texture = TextureManager::get_texture("skeleton");
+        dying_animation.frame_count = 13;
+        dying_animation.frame_speed = 10;
+        dying_animation.loops = false;
+        dying_animation.frames =
+        {
+            { 9, 79, 32, 33 },
+            { 73, 80, 32, 32 },
+            { 137, 81, 31, 31 },
+            { 201, 84, 35, 28 },
+            { 265, 83, 37, 29 },
+            { 329, 82, 38, 30 },
+            { 393, 80, 42, 32 },
+            { 457, 79, 42, 33 },
+            { 521, 79, 42, 33 },
+            { 585, 79, 42, 33 },
+            { 649, 80, 42, 32 },
+            { 713, 82, 42, 30 },
+            { 777, 105, 42, 7 }
+        };
+
+        skeleton_stats.enemy_animations[EnemyState::DYING] = dying_animation;
+        
 
         return skeleton_stats;
     };

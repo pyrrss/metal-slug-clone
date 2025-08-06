@@ -43,11 +43,8 @@ void Enemy::update()
             }
             else
             {
-                if (m_enemy_state == EnemyState::SPAWNING)
-                {
-                    m_enemy_state = EnemyState::IDLE;
-                    m_current_animation_frame = 0;
-                }
+                m_enemy_state = EnemyState::IDLE;
+                m_current_animation_frame = 0;
             }
 
 
@@ -59,7 +56,7 @@ void Enemy::update()
     m_velocity.x = m_movement_direction.x * m_enemy_stats.enemy_speed;
 
     // -> se aplica gravedad
-    const float GRAVITY = 980.0f; // Aceleración gravitacional en píxeles/segundo^2
+    const float GRAVITY = 980.0f;    
     m_velocity.y += m_gravity_scale * GRAVITY * GetFrameTime();
 
     // -> se actualiza la posición según velocidad y dirección
@@ -112,7 +109,7 @@ void Enemy::render()
 // --- ACCIONES ---
 void Enemy::move(Vector2 direction)
 {
-    if (m_enemy_state == EnemyState::DYING)
+    if (m_enemy_state == EnemyState::DYING || m_enemy_state == EnemyState::ATTACKING)
     {
         return;
     }
@@ -149,6 +146,36 @@ void Enemy::stop_move()
 
 }
 
+void Enemy::attack()
+{
+    if (m_enemy_state == EnemyState::ATTACKING)
+    {
+        return;
+    }
+
+    m_enemy_state = EnemyState::ATTACKING;
+    m_current_animation_frame = 0;
+    m_movement_direction = { 0, 0 }; // -> se detiene para atacar
+
+    // TODO: lo anterior es la parte de animacion, falta
+    // manejar logica de ataque al jugador e inflingir daño
+
+
+}
+
+void Enemy::die()
+{
+    if (m_enemy_state == EnemyState::DYING)
+    {
+        return;
+    }
+
+    m_enemy_state = EnemyState::DYING;
+    m_current_animation_frame = 0;
+    m_movement_direction = { 0, 0 }; // -> se detiene para morir :v
+
+    // TODO: lo anterior es la animacion, falta manejar logica
+}
 
 
 
@@ -163,6 +190,13 @@ void Enemy::on_collision_with_floor(Rectangle floor)
 
 void Enemy::on_collision_with_entity(Entity* entity)
 {
+
+    // NOTE: esto es de prueba, luego cambiar y recibir/inflingir daño
+    if (entity->get_object_type() == GameObjectType::PLAYER)
+    {
+        stop_move();
+    }
+
 
 }
 

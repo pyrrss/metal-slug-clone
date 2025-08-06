@@ -139,7 +139,7 @@ Bullet::Bullet(Vector2 position, int facing_direction) : GameObject(position)
     
     m_is_active = true;
 
-    m_bullet_scale = 15.0f;
+    m_bullet_scale = 5.0f;
     
     m_source_rec = {7, 7, 3, 2}; // -> lo defino aca ya que solo es una textura con un solo frame
 
