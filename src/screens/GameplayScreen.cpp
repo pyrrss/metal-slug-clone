@@ -1,6 +1,7 @@
 #include <iostream>
 #include <memory>
 #include <algorithm>
+#include <cmath>
 
 #include "raylib.h"
 #include "raymath.h"
@@ -10,7 +11,9 @@
 #include "../entities/Enemy.hpp"
 #include "../entities/EnemyFactory.hpp"
 #include "../entities/Platform.hpp"
+#include "../managers/TextureManager.hpp"
 
+#include "../core/ParallaxLayer.hpp"
 
 GameplayScreen::GameplayScreen()
 {
@@ -21,34 +24,26 @@ GameplayScreen::GameplayScreen()
 GameplayScreen::~GameplayScreen()
 {
     std::cout << "LOG: GameplayScreen destruido" << std::endl;
-
-
-    // NOTE: ya no es necesario delete, ya que se está usando unique_ptr y se gestiona automáticamente
-    // for (Entity* entity : m_entities)
-    // {
-    //     delete entity;
-    // }
-    //
-    // for (Platform* platform : m_platforms)
-    // {
-    //     delete platform;
-    // }
-
 }
 
 void GameplayScreen::init()
 {
     m_floor = { 0, (float) GetScreenHeight() - 50, (float) GetScreenWidth(), 50 };
 
-    // NOTE: TODO ESTO ES PARA TESTEAR COSAS Y FUNCIONALIDADES 
-
+    // --- PLAYER ---
     Vector2 player_pos = { (float) GetScreenWidth() / 2, (float) GetScreenHeight() / 2};
     Vector2 player_velocity = { 0.0f, 0.0f };
     float player_scale = 4.0f;   
 
-    std::unique_ptr<Player> player = std::make_unique<Player> (player_pos, player_velocity, player_scale);
-    player->equip_glock();
-    m_entities.push_back(std::move(player));
+    m_player = std::make_unique<Player> (player_pos, player_velocity, player_scale);
+    m_player->equip_glock();
+
+    // --- CAMERA ---
+    m_camera.target = m_player->get_position();
+    m_camera.offset = { (float) GetScreenWidth() / 2.0f, (float) GetScreenHeight() / 2.0f };
+    m_camera.rotation = 0.0f;
+    m_camera.zoom = 1.0f;
+
 
     // --- ENEMIES ---
     EnemyStats skeleton_stats = EnemyFactory::create_skeleton_stats();
@@ -56,31 +51,37 @@ void GameplayScreen::init()
     Vector2 enemy_pos = { 700.0f, 500.0f };
     Vector2 enemy_velocity = { 0.0f, 0.0f };
     std::unique_ptr<Enemy> enemy = std::make_unique<Enemy> (enemy_pos, enemy_velocity, skeleton_stats);
-    m_entities.push_back(std::move(enemy));
-
-
+    m_enemies.push_back(std::move(enemy));
 
     // -> se crean algunas plataformas de prueba
     // m_platforms.push_back(new Platform({ 500, 500 }, 200, 20));
     // m_platforms.push_back(new Platform({ 800, 400 }, 200, 20));
     // m_platforms.push_back(new Platform({ 200, 300 }, 200, 20));
+
+
+    // --- PARALLAX LAYERS BG ---
+    // NOTE: se ordenan de capa más lejana a más cercana := z-ordering
+    
+    ParallaxLayer layer6_bg = { TextureManager::get_texture("layer6_bg"), { 0, 0 }, 0.1f };
+    ParallaxLayer layer5_bg = { TextureManager::get_texture("layer5_bg"), { 0, 0 }, 0.25f };
+    ParallaxLayer layer4_bg = { TextureManager::get_texture("layer4_bg"), { 0, 0 }, 0.4f };
+    ParallaxLayer layer3_bg = { TextureManager::get_texture("layer3_bg"), { 0, 0 }, 0.5f };
+    ParallaxLayer layer2_bg = { TextureManager::get_texture("layer2_bg"), { 0, 0 }, 0.75f };
+    ParallaxLayer layer1_bg = { TextureManager::get_texture("layer1_bg"), { 0, 0 }, 0.9f };
+
+    m_parallax_layers.push_back(layer6_bg);
+    m_parallax_layers.push_back(layer5_bg);
+    m_parallax_layers.push_back(layer4_bg);
+    m_parallax_layers.push_back(layer3_bg);
+    m_parallax_layers.push_back(layer2_bg);
+    m_parallax_layers.push_back(layer1_bg);
+
 }
 
 game_screen GameplayScreen::update()
 {
-    // --- Manejo de Input ---
-    Player* player = nullptr;
-    for (const std::unique_ptr<Entity>& entity : m_entities)
-    {
-        // -> se intenta castear a Player
-        player = dynamic_cast<Player*>(entity.get());
-        if (player)
-        {
-            break; 
-        }
-    }
-
-    if (player) // -> si se encuentra al jugador
+    // --- Manejo de Input del Jugador ---
+    if (m_player)
     {
         Vector2 move_dir = { 0.0f, 0.0f };
         if (IsKeyDown(KEY_D) || IsKeyDown(KEY_RIGHT)) 
@@ -95,27 +96,31 @@ game_screen GameplayScreen::update()
 
         if (Vector2Length(move_dir) > 0.0f)
         {
-            player->move(move_dir);
+            m_player->move(move_dir);
         }
         else
         {
-            player->stop_move();
+            m_player->stop_move();
         }
 
-        if (IsKeyPressed(KEY_SPACE))
+        if (IsKeyPressed(KEY_W))
         {
-            player->jump();
+            m_player->jump();
         }
 
         if (IsKeyPressed(KEY_LEFT_SHIFT) || IsKeyPressed(KEY_RIGHT_SHIFT))
         {
-            player->dash();
+            m_player->dash();
         }
-        
-        // TODO: ver si hay un mejor boton para disparar
-        if (IsKeyPressed(KEY_E))
+ 
+        if (IsKeyPressed(KEY_F))
         {
-            std::unique_ptr<Bullet> bullet = player->get_current_weapon()->shoot();
+            m_player->attack();
+        }
+
+        if (IsKeyPressed(KEY_SPACE))
+        {
+            std::unique_ptr<Bullet> bullet = m_player->get_current_weapon()->shoot();
             
             if (bullet != nullptr)
             {
@@ -124,106 +129,93 @@ game_screen GameplayScreen::update()
         }
     }
 
-    // NOTE: por ahora se maneja al enemigo por input manual para testear,
-    // luego se manejará según comportamiento de enemigo
-
+    // --- input de Debug para Enemigos ---
     if (IsKeyPressed(KEY_ONE))
     {
-        for (std::unique_ptr<Entity>& enemy : m_entities)
+        for (auto& enemy : m_enemies)
         {
-            if (enemy->get_object_type() == GameObjectType::ENEMY)
-            {
-                Enemy* enemy_ptr = dynamic_cast<Enemy*>(enemy.get());
-                if (enemy_ptr)
-                {
-                    enemy_ptr->attack();
-                }
-            }
+            enemy->attack();
         }
     }
 
     if (IsKeyPressed(KEY_TWO))
     {
-        for (std::unique_ptr<Entity>& enemy : m_entities)
+        for (auto& enemy : m_enemies)
         {
-            if (enemy->get_object_type() == GameObjectType::ENEMY)
-            {
-                Enemy* enemy_ptr = dynamic_cast<Enemy*>(enemy.get());
-                if (enemy_ptr)
-                {
-                    enemy_ptr->die();
-                }
-            }
+            enemy->die();
         }
-
     }
+
 
     // --- ACTUALIZACION DE ENTIDADES ---
     
-    // -> se actualizan todas las entidades 
-    for (const std::unique_ptr<Entity>& entity : m_entities)
+    // -> Actualizar jugador y cámara 
+    if (m_player)
     {
-        entity->update();
-    
-        // TODO: quitar esto de aqui luego y manejarlo según comportamiento de enemigo
-        if (entity->get_object_type() == GameObjectType::ENEMY)
+        m_player->update();
+        m_camera.target = m_player->get_position();
+    }
+
+    // -> actualizar enemigos y su IA
+    for (auto& enemy : m_enemies)
+    {
+        enemy->update();
+        if (m_player)
         {
-            entity->move(Vector2{ -1.0f, 0.0f });
+            enemy->update_ai(*m_player);
         }
     }
     
-    for (const std::unique_ptr<Bullet>& bullet : m_bullets)
+    // -> actualizar balas
+    for (auto& bullet : m_bullets)
     {
         bullet->update();
     }
 
-    // -> limpieza de bullets inactivas
-    m_bullets.erase( // NOTE: no entiendo esta sintaxis rara pero funciona
+    // -> limpieza de balas inactivas
+    // NOTE: no entiendo esta sintaxis rara pero funciona
+    m_bullets.erase(
             std::remove_if(m_bullets.begin(), m_bullets.end(), [](const std::unique_ptr<Bullet>& bullet) {
                 return !bullet->is_active();
             }),
             m_bullets.end()
     );
 
-    // TODO: en un futuro manejar colisiones de mejor forma
+    // --- COLISIONES ---
 
-    // -> colisiones entidad-suelo
-    for (const std::unique_ptr<Entity>& entity : m_entities)
+    // -> colisión del jugador con el suelo
+    if (m_player && CheckCollisionRecs(m_player->get_bounding_box(), m_floor))
     {
-        if (CheckCollisionRecs(entity->get_bounding_box(), m_floor))
+        m_player->on_collision_with_floor(m_floor);
+    }
+
+    // -> colisión de enemigos con el suelo
+    for (auto& enemy : m_enemies)
+    {
+        if (CheckCollisionRecs(enemy->get_bounding_box(), m_floor))
         {
-            entity->on_collision_with_floor(m_floor);
+            enemy->on_collision_with_floor(m_floor);
         }
     }
     
-    // -> colisiones entidad-plataforma
-    for (std::unique_ptr<Entity>& entity : m_entities)
-    {
-        for (std::unique_ptr<Platform>& platform : m_platforms)
-        {
-            if (CheckCollisionRecs(entity->get_bounding_box(), platform->get_bounding_box()))
-            {
-                entity->on_collision_with_platform(dynamic_cast<Platform*>(platform.get()));
-            }
-        }
-    }
-    
+    // -> colisiones con plataformas (si las hubiera)
+    // ...
 
-    // -> colisiones entidad-entidad
-    for (std::unique_ptr<Entity>& entity : m_entities)
+    // -> colisiones entre entidades (Jugador con Enemigo)
+    if (m_player)
     {
-        for (std::unique_ptr<Entity>& other_entity : m_entities)
+        for (auto& enemy : m_enemies)
         {
-            if (entity.get() != other_entity.get())
+            if (CheckCollisionRecs(m_player->get_bounding_box(), enemy->get_bounding_box()))
             {
-                if (CheckCollisionRecs(entity->get_bounding_box(), other_entity->get_bounding_box()))
-                {
-                    entity->on_collision_with_entity(other_entity.get());
-                    other_entity->on_collision_with_entity(entity.get());
-                }
+                m_player->on_collision_with_entity(enemy.get());
+                enemy->on_collision_with_entity(m_player.get());
             }
         }
     }
+
+    // -> se actualiza el suelo de acuerdo a las dimensiones actuales
+    m_floor = { 0, (float) GetScreenHeight() - 50, (float) GetScreenWidth(), 50 };
 
     return game_screen::NONE;
 }
@@ -231,24 +223,57 @@ game_screen GameplayScreen::update()
 void GameplayScreen::render()
 {
     ClearBackground(RAYWHITE);
-    
-    int font_width = MeasureText("Pantalla de juego", 40);
-
-    DrawText("Pantalla de juego", GetScreenWidth() / 2 - font_width / 2, 50, 40, BLACK);
-    
-    // -> renderizar entidades
-    for (std::unique_ptr<Entity>& entity : m_entities)
+ 
+    // -> baackground parallax
+    for (auto& layer : m_parallax_layers)
     {
-        entity->render();
+        float scale = (float) GetScreenHeight() / layer.texture.height;
+        float scaled_width = layer.texture.width * scale;
+
+        float offset_x = fmodf(m_camera.target.x * layer.scroll_speed, scaled_width);
+    
+        float start_x = -offset_x; // -> posición inicial para empezar a renderizar
+        if (start_x > 0)
+        {
+            start_x -= scaled_width;
+        }
+
+        for (float x = start_x; x < GetScreenWidth(); x += scaled_width)
+        {
+            DrawTextureEx(layer.texture, { x, 0 }, 0.0f, scale, WHITE);
+        }
     }
 
-    for (std::unique_ptr<Bullet>& bullet : m_bullets)
+    
+    // -> se inicia modo de renderizado 2d con la cámara
+    BeginMode2D(m_camera);
+
+
+    // -> renderizar jugador
+    if (m_player)
+    {
+        m_player->render();
+    }
+
+    // -> renderizar enemigos
+    for (auto& enemy : m_enemies)
+    {
+        enemy->render();
+    }
+
+    // -> renderizar balas
+    for (auto& bullet : m_bullets)
     {
         bullet->render();
     }
 
-
     DrawRectangleRec(m_floor, DARKGRAY);
 
+    EndMode2D();
+
+    
+    // -> a partir de acá se dibujan elementos estáticos de la ui que van fijos en pantalla
+    int font_width = MeasureText("Pantalla de juego", 40);
+    DrawText("Pantalla de juego", GetScreenWidth() / 2 - font_width / 2, 50, 40, BLACK);
 
 }

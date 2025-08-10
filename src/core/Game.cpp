@@ -35,7 +35,8 @@ void Game::run()
     // TODO: inicializar todo acá
     // -------------------------------------------------------------
     std::cout << "Game::init()" << std::endl;
-    
+ 
+    SetConfigFlags(FLAG_WINDOW_RESIZABLE);
     InitWindow(m_screen_width, m_screen_height, "Metal Slug Clone");
     SetTargetFPS(60);
 
@@ -83,14 +84,14 @@ void Game::run()
         // ----------------------- RENDER -------------------------------
         // TODO: Render cosas acá (luego ver donde colocar esto o lo que sea)
         BeginDrawing();
-            DrawFPS(10, 10);
-            DrawText(TextFormat("Frames: %i", frames_counter), 10, 40, 20, BLACK);
-
-
-            if (m_current_screen != nullptr)
-            {
-                m_current_screen->render();
-            }
+        
+        DrawFPS(10, 10);
+        DrawText(TextFormat("Frames: %i", frames_counter), 10, 40, 20, BLACK);
+        
+        if (m_current_screen != nullptr)
+        {
+            m_current_screen->render();
+        }
         
         EndDrawing();
 

@@ -17,6 +17,7 @@ enum class PlayerState
     RUNNING,
     JUMPING,
     DASHING,
+    ATTACKING, // NOTE: ATTACKING representa al jugador atacando con la espada a melee
     CROUCHING,
     HURT,
     DYING
@@ -76,7 +77,8 @@ class Player : public Entity
         void jump();
         void dash();
         void stop_dash();
-        
+        void attack();
+
         Weapon* get_current_weapon() const;
 
         void equip_glock();

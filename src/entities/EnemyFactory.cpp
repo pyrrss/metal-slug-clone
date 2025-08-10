@@ -10,27 +10,29 @@ namespace EnemyFactory
 
         // TODO: revisar y ajustar/equilibrar stats luego
         skeleton_stats.enemy_max_health = 100.0f;
-        skeleton_stats.enemy_speed = 20.0f;
+        skeleton_stats.enemy_speed = 250.0f;
         skeleton_stats.enemy_damage = 10.0f;
         skeleton_stats.enemy_score_points = 10;
         skeleton_stats.enemy_scale = 4.0f;
+        skeleton_stats.enemy_attack_range = 150.0f;
+        skeleton_stats.enemy_chase_range = 400.0f;
 
         // ------------- ANIMACIONES ------------
         
-        // --- SPAWNING ---
-        Animation spawning_animation;
-        spawning_animation.texture = TextureManager::get_texture("skeleton");
-        spawning_animation.frame_count = 3;
-        spawning_animation.frame_speed = 5;
-        spawning_animation.loops = false;
-        spawning_animation.frames =
+        // --- HURT ---
+        Animation hurt_animation;
+        hurt_animation.texture = TextureManager::get_texture("skeleton");
+        hurt_animation.frame_count = 3;
+        hurt_animation.frame_speed = 5;
+        hurt_animation.loops = false;
+        hurt_animation.frames =
         {
             { 9, 271, 32, 33 },
             { 73, 272, 32, 33 },
             { 137, 272, 32, 33 }
         };
 
-        skeleton_stats.enemy_animations[EnemyState::SPAWNING] = spawning_animation;
+        skeleton_stats.enemy_animations[EnemyState::HURT] = hurt_animation;
     
 
         // --- IDLE ---

@@ -31,7 +31,7 @@ class GameObject
         virtual void render() = 0;
         virtual void update() = 0;
 
-
+        virtual Vector2 get_position() const;
         virtual GameObjectType get_object_type() const;
         virtual Rectangle get_bounding_box() const;
 

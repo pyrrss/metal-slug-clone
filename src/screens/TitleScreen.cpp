@@ -8,10 +8,25 @@ TitleScreen::TitleScreen()
 {
     // TODO: cargar cositas/recursos del menú principal acá
     
-    // ------------ RECTANGULOS BOTONES ------------
-    float button_width = 200.0f;
-    float button_height = 50.0f;
-    float button_spacing = 100.0f;
+}
+
+TitleScreen::~TitleScreen()
+{
+    std::cout << "LOG: TitleScreen destruido" << std::endl;
+}
+
+void TitleScreen::init()
+{
+
+}
+
+game_screen TitleScreen::update()
+{
+    // NOTE: se actualizan todas las dimensiones y coordenadas en función de tamaño actual de ventana
+
+    float button_width = GetScreenWidth() / 5.0f;;
+    float button_height = GetScreenHeight() / 10.0f;
+    float button_spacing = GetScreenHeight() / 10.0f;;
     
     m_play_button_rect.x = GetScreenWidth() / 2.0f - button_width / 2.0f;
     m_play_button_rect.y = GetScreenHeight() / 2.0f - button_height / 2.0f;
@@ -31,20 +46,6 @@ TitleScreen::TitleScreen()
     m_exit_button_rect.height = button_height;
 
 
-}
-
-TitleScreen::~TitleScreen()
-{
-    std::cout << "LOG: TitleScreen destruido" << std::endl;
-}
-
-void TitleScreen::init()
-{
-
-}
-
-game_screen TitleScreen::update()
-{
     // ------------ INTERACCIÓN BOTONES ----------
     if (CheckCollisionPointRec(GetMousePosition(), m_play_button_rect) && IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
     {
@@ -99,8 +100,16 @@ void TitleScreen::render()
 {
     ClearBackground(GOLD);
 
+    
+    int title_text_width = MeasureText("ESTE ES EL MENÚ PRINCIPAL", 40);
 
-    DrawText("ESTE ES EL MENÚ PRINCIPAL", 100, 200, 40, DARKGRAY);
+    DrawText(
+            "ESTE ES EL MENÚ PRINCIPAL", 
+            GetScreenWidth() / 2.0f - title_text_width / 2.0f, 
+            GetScreenHeight() / 3.0f, 
+            40, 
+            DARKGRAY
+    );
     
     DrawRectangleRec(m_play_button_rect, m_play_button_color);
     DrawRectangleRec(m_options_button_rect, m_options_button_color);
@@ -113,12 +122,12 @@ void TitleScreen::render()
     int play_button_text_width = MeasureText("a juga koma", font_size);
 
     DrawText(
-        "a juga kompa",
-        m_play_button_rect.x + m_play_button_rect.width / 2.0f - play_button_text_width / 2.0f,
-        m_play_button_rect.y + m_play_button_rect.height / 2.0f - font_size / 2.0f,
-        20, 
-        BLACK
-    );
+            "a juga kompa",
+            m_play_button_rect.x + m_play_button_rect.width / 2.0f - play_button_text_width / 2.0f,
+            m_play_button_rect.y + m_play_button_rect.height / 2.0f - font_size / 2.0f,
+            20, 
+            BLACK
+            );
 
     int options_button_text_width = MeasureText("ocppoone", 20);
 
@@ -128,7 +137,7 @@ void TitleScreen::render()
             m_options_button_rect.y + m_options_button_rect.height / 2.0f - font_size / 2.0f,
             20, 
             BLACK
-    );
+            );
 
     int exit_button_text_width = MeasureText("ocppoone", 20);
 
@@ -138,8 +147,6 @@ void TitleScreen::render()
             m_exit_button_rect.y + m_exit_button_rect.height / 2.0f - font_size / 2.0f,
             20, 
             BLACK
-    );
-
-
+            );
 
 }

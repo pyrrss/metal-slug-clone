@@ -6,6 +6,10 @@ GameObject::GameObject(Vector2 position)
     this->m_position = position;
 }
 
+Vector2 GameObject::get_position() const
+{
+    return m_position;
+}
 
 GameObjectType GameObject::get_object_type() const
 {

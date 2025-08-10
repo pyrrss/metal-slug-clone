@@ -66,7 +66,20 @@ void Player::update()
             }
             else
             {
-                m_current_animation_frame = current_animation.frame_count - 1; // -> se queda en último frame
+                // TODO: está un poco fea esta parte, quizá arreglar en algún momento
+                // si es que se pone más fea o tengo que anidar más if's
+
+                if (m_player_state == PlayerState::ATTACKING)
+                {
+                    m_player_state = PlayerState::IDLE;
+                    m_current_animation_frame = 0;
+                }
+                else
+                {
+                    m_current_animation_frame = current_animation.frame_count - 1; // -> queda en último frame
+                }
+
+
             }
 
         }
@@ -79,7 +92,7 @@ void Player::update()
     {
         m_dash_duration_timer -= GetFrameTime();
     }
-    else if (m_player_state == PlayerState::DASHING)
+    else if (m_player_state == PlayerState::DASHING && m_dash_duration_timer <= 0.0f)
     {
         stop_dash();
     }
@@ -110,6 +123,29 @@ void Player::update()
 
     // -> se actualiza la posición según velocidad y dirección
     m_position = Vector2Add(m_position, Vector2Scale(m_velocity, GetFrameTime()));
+
+    // NOTE: luego quizá quiera ajustar esto según otras reglas pero por ahora sirve así
+   
+    // -> se verifica que jugador no salga de la pantalla horizontalmente
+    if (m_position.x < 0)
+    {
+        m_position.x = GetScreenWidth();
+    } 
+    else if (m_position.x > GetScreenWidth())
+    {
+        m_position.x = 0;
+    }
+
+    // -> se verifica que jugador no salga de la pantalla verticalmente
+    if (m_position.y > GetScreenHeight())
+    {
+        m_position.y = 0;
+    }
+    else if (m_position.y < 0)
+    {
+        m_position.y = GetScreenHeight();
+    }
+
 
     // -> se actualiza rectangulo del jugador
     m_bounding_box.x = m_position.x;
@@ -221,7 +257,7 @@ void Player::on_collision_with_floor(Rectangle floor)
     m_velocity.y = 0;
     m_position.y = floor.y - m_bounding_box.height;
 
-    if (m_player_state == PlayerState::JUMPING || m_player_state == PlayerState::DASHING)
+    if (m_player_state == PlayerState::JUMPING)
     {
         m_player_state = PlayerState::IDLE;
         m_current_animation_frame = 0;
@@ -251,7 +287,11 @@ void Player::on_collision_with_entity(Entity* entity)
 
 void Player::move(Vector2 direction)
 {
-    if (m_player_state == PlayerState::DASHING) return;
+    if (m_player_state == PlayerState::DASHING || m_player_state == PlayerState::ATTACKING) 
+    {
+        return;
+    }
+
 
     if (direction.x > 0)
     {
@@ -274,7 +314,7 @@ void Player::move(Vector2 direction)
 
 void Player::stop_move()
 {
-    if (m_player_state == PlayerState::DASHING) return;
+    if (m_player_state == PlayerState::DASHING || m_player_state == PlayerState::ATTACKING) return;
 
     if (m_player_state != PlayerState::IDLE && m_player_state != PlayerState::JUMPING)
     {
@@ -287,11 +327,15 @@ void Player::stop_move()
 
 void Player::jump()
 {
-    if (m_player_state == PlayerState::DASHING || m_player_state == PlayerState::JUMPING) 
+    if (m_player_state == PlayerState::DASHING || m_player_state == PlayerState::ATTACKING || m_player_state == PlayerState::JUMPING) 
     {
         return;
     }
-
+    
+    // NOTE: por alguna razón si se dashea y luego se salta, 
+    // la gravedad no se aplica y el jugador flota hacia arriba
+    // asi que esta linea asegura que la gravedad se aplique
+    m_gravity_scale = 1.0f; // -> se asegura que la gravedad esté activa para el salto
     
     m_player_state = PlayerState::JUMPING;
     m_current_animation_frame = 0;
@@ -325,12 +369,27 @@ void Player::dash()
 
 void Player::stop_dash()
 {
-    m_player_state = PlayerState::IDLE;
+    m_player_state = PlayerState::JUMPING;
     m_current_animation_frame = 0;
-    m_velocity = { 0, 0 }; // -> restaurar velocidad
+    m_velocity.x = 0; // -> solo se resetea la velocidad horizontal
     m_gravity_scale = 1.0f; // -> restaurar gravedad
     m_dash_duration_timer = 0.0f;
 }
+
+void Player::attack()
+{
+    if (m_player_state == PlayerState::ATTACKING || m_player_state == PlayerState::JUMPING)
+    {
+        return;
+    }
+
+    m_player_state = PlayerState::ATTACKING;
+    m_current_animation_frame = 0;
+
+    m_velocity = { 0, 0 };
+    m_movement_direction = { 0, 0 };
+}
+
 
 Weapon* Player::get_current_weapon() const
 {
@@ -358,9 +417,6 @@ void Player::equip_ak47()
     WeaponStats ak47_stats = WeaponFactory::create_ak47_stats();
     m_current_weapon = new Weapon(m_position, ak47_stats);
 }
-
-
-
 
 
 void Player::setup_animations()
@@ -440,13 +496,40 @@ void Player::setup_animations()
     
     m_animations[PlayerState::DASHING] = dashing_animation;
 
+    // ------------- ANIMACION ATTACKING ------------
+    Animation attacking_animation;
+    attacking_animation.texture = TextureManager::get_texture("player_attacking");
+    attacking_animation.frame_count = 12;
+    attacking_animation.frame_speed = 13; 
+    attacking_animation.loops = false;
+    attacking_animation.frames =
+    {
+        { 0, 1, 55, 42 },
+        { 64, 1, 51, 42 },
+        { 130, 3, 48, 40 },
+        { 204, 1, 27, 42 },
+        { 265, 6, 30, 37 },
+        { 331, 11, 28, 32 },
+        { 397, 11, 29, 32 },
+        { 463, 11, 27, 32 },
+        { 525, 3, 48, 40 },
+        { 590, 4, 50, 39 },
+        { 657, 4, 40, 39 },
+        { 724, 14, 23, 29 }
+    };
+
+    m_animations[PlayerState::ATTACKING] = attacking_animation;
+
     // -> inicializar timer de frames para mantener velocidad de animación
     this->m_frames_timer = 0.0f;
+
+
+    
+
 }
 
 void Player::setup_weapon_anchor_points()
 {
-    // TODO: rellenar map de estados a vec de puntos de anclaje   
     
     m_weapon_anchor_points[PlayerState::IDLE] = 
     {

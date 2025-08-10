@@ -28,6 +28,9 @@ void TextureManager::load_all_textures()
     Texture2D player_dashing_texture = LoadTexture("assets/player/DASH.png");
     s_textures["player_dashing"] = player_dashing_texture;
 
+    Texture2D player_attacking_texture = LoadTexture("assets/player/ATTACK.png");
+    s_textures["player_attacking"] = player_attacking_texture;
+
     // --------------- WEAPONS --------------
     Texture2D glock_idle_texture = LoadTexture("assets/weapons/glock/glock_idle.png");
     s_textures["glock_idle"] = glock_idle_texture;
@@ -48,6 +51,25 @@ void TextureManager::load_all_textures()
     s_textures["skeleton"] = skeleton_texture;
 
 
+    // --------------- PARALLAX LAYERS BACKGROUND --------------
+    
+    Texture2D layer1_bg_texture = LoadTexture("assets/backgrounds/mountain/layer1.png");
+    s_textures["layer1_bg"] = layer1_bg_texture;
+
+    Texture2D layer2_bg_texture = LoadTexture("assets/backgrounds/mountain/layer2.png");
+    s_textures["layer2_bg"] = layer2_bg_texture;
+    
+    Texture2D layer3_bg_texture = LoadTexture("assets/backgrounds/mountain/layer3.png");
+    s_textures["layer3_bg"] = layer3_bg_texture;
+
+    Texture2D layer4_bg_texture = LoadTexture("assets/backgrounds/mountain/layer4.png");
+    s_textures["layer4_bg"] = layer4_bg_texture;
+
+    Texture2D layer5_bg_texture = LoadTexture("assets/backgrounds/mountain/layer5.png");
+    s_textures["layer5_bg"] = layer5_bg_texture;
+
+    Texture2D layer6_bg_texture = LoadTexture("assets/backgrounds/mountain/layer6.png");
+    s_textures["layer6_bg"] = layer6_bg_texture;
 }
 
 void TextureManager::unload_all_textures()
@@ -63,6 +85,12 @@ void TextureManager::unload_all_textures()
     UnloadTexture(s_textures["glock_shooting"]);
     UnloadTexture(s_textures["glock_bullet"]);
     UnloadTexture(s_textures["skeleton"]);
+    UnloadTexture(s_textures["layer1_bg"]);
+    UnloadTexture(s_textures["layer2_bg"]);
+    UnloadTexture(s_textures["layer3_bg"]);
+    UnloadTexture(s_textures["layer4_bg"]);
+    UnloadTexture(s_textures["layer5_bg"]);
+    UnloadTexture(s_textures["layer6_bg"]);
 }
 
 Texture2D TextureManager::get_texture(const std::string& name)

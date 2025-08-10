@@ -7,7 +7,7 @@ int main()
     std::cout << "q carajos" << std::endl;
 
 
-    Game game(1000, 800);
+    Game game(1280, 720);
     game.run();
 
 

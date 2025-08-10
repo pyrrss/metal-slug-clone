@@ -2,20 +2,33 @@
 #define ENEMY_HPP
 
 #include <map>
+#include <memory>
 
 #include "raylib.h"
 
 #include "Entity.hpp"
 #include "../core/Animation.hpp"
+#include "../core/AIStrategy.hpp"
 
+
+// NOTE: EnemyState hace referencia al estado físico/visual del enemigo 
 enum class EnemyState
 {
-    SPAWNING,
     IDLE, 
     RUNNING,
     ATTACKING,
     HURT,
     DYING
+};
+
+// NOTE: AIState hace referencia al estado del enemigo en cuanto a su comportamiento
+enum class AIState
+{
+    PATROLLING,
+    CHASING,
+    ATTACKING
+
+    // ......
 };
 
 struct EnemyStats
@@ -25,15 +38,12 @@ struct EnemyStats
     float enemy_damage;
     int enemy_score_points; // -> puntos que da enemigo al morir
     float enemy_scale;
-    // ......
-
+    float enemy_attack_range;
+    float enemy_chase_range;
 
     std::map<EnemyState, Animation> enemy_animations;
 
 };
-
-
-
 
 class Enemy : public Entity
 {
@@ -41,6 +51,9 @@ class Enemy : public Entity
         const EnemyStats m_enemy_stats;
         
         EnemyState m_enemy_state;
+        AIState m_ai_state;
+        
+        std::unique_ptr<AIStrategy> m_current_ai_strategy;
 
         // -> vars para controlar animaciones
         float m_frames_timer;
@@ -48,6 +61,10 @@ class Enemy : public Entity
         int m_facing_direction; // -> dirección donde se mira := 1 derecha, -1 izquierda, 0 vertical?
     
         Vector2 m_movement_direction;
+
+    private:
+        bool is_player_in_range(Player& player, float range);
+
 
     public:
         Enemy(Vector2 position, Vector2 velocity, const EnemyStats& stats);
@@ -66,7 +83,9 @@ class Enemy : public Entity
         void stop_move() override;
         void attack();
         void die();        
-
+        
+        void update_ai(Player& player); // -> gestiona transiciones de estados de comportamiento
+        void set_ai_strategy(std::unique_ptr<AIStrategy> ai_strategy);
 
 };
 
