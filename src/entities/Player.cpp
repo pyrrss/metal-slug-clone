@@ -124,18 +124,6 @@ void Player::update()
     // -> se actualiza la posición según velocidad y dirección
     m_position = Vector2Add(m_position, Vector2Scale(m_velocity, GetFrameTime()));
 
-    // NOTE: luego quizá quiera ajustar esto según otras reglas pero por ahora sirve así
-   
-    // -> se verifica que jugador no salga de la pantalla horizontalmente
-    if (m_position.x < 0)
-    {
-        m_position.x = GetScreenWidth();
-    } 
-    else if (m_position.x > GetScreenWidth())
-    {
-        m_position.x = 0;
-    }
-
     // -> se verifica que jugador no salga de la pantalla verticalmente
     if (m_position.y > GetScreenHeight())
     {

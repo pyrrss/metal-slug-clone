@@ -28,10 +28,14 @@ GameplayScreen::~GameplayScreen()
 
 void GameplayScreen::init()
 {
-    m_floor = { 0, (float) GetScreenHeight() - 50, (float) GetScreenWidth(), 50 };
+ 
+    // --- WORLD SETUP ---
+
+    m_floor = { -2000, 700.0f, 10000, 10000 };
 
     // --- PLAYER ---
-    Vector2 player_pos = { (float) GetScreenWidth() / 2, (float) GetScreenHeight() / 2};
+    // -> se posiciona al jugador en relación al suelo
+    Vector2 player_pos = { (float) 0.0f, 650.0f };
     Vector2 player_velocity = { 0.0f, 0.0f };
     float player_scale = 4.0f;   
 
@@ -40,7 +44,7 @@ void GameplayScreen::init()
 
     // --- CAMERA ---
     m_camera.target = m_player->get_position();
-    m_camera.offset = { (float) GetScreenWidth() / 2.0f, (float) GetScreenHeight() / 2.0f };
+    m_camera.offset = { (float) GetScreenWidth() / 2.0f - 100.0f, (float) GetScreenHeight() / 2.0f + 100.0f }; // -> jugador aparece en el centro 50 pixeles izq. y 100 pixeles más abajo
     m_camera.rotation = 0.0f;
     m_camera.zoom = 1.0f;
 
@@ -48,10 +52,16 @@ void GameplayScreen::init()
     // --- ENEMIES ---
     EnemyStats skeleton_stats = EnemyFactory::create_skeleton_stats();
 
-    Vector2 enemy_pos = { 700.0f, 500.0f };
-    Vector2 enemy_velocity = { 0.0f, 0.0f };
-    std::unique_ptr<Enemy> enemy = std::make_unique<Enemy> (enemy_pos, enemy_velocity, skeleton_stats);
-    m_enemies.push_back(std::move(enemy));
+    // -> se posiciona al enemigo en relación al suelo
+    Vector2 start_enemy_pos = { 400.0f, 650.0f };
+    
+    for (int i = 0; i < 5; i++)
+    {
+        Vector2 current_enemy_pos = { (float) start_enemy_pos.x + i * 300, start_enemy_pos.y };
+        Vector2 enemy_velocity = { 0.0f, 0.0f };
+        std::unique_ptr<Enemy> enemy = std::make_unique<Enemy> (current_enemy_pos, enemy_velocity, skeleton_stats);
+        m_enemies.push_back(std::move(enemy));
+    }
 
     // -> se crean algunas plataformas de prueba
     // m_platforms.push_back(new Platform({ 500, 500 }, 200, 20));
@@ -146,6 +156,28 @@ game_screen GameplayScreen::update()
         }
     }
 
+    // -> input para ajustar cámara
+    if (IsKeyDown(KEY_COMMA))
+    {
+        m_camera.zoom += 0.01f;
+        
+        if (m_camera.zoom > 3.0f)
+        {
+            m_camera.zoom = 3.0f;
+        }
+    }
+
+    if (IsKeyDown(KEY_PERIOD))
+    {
+        m_camera.zoom -= 0.01f;
+        
+        if (m_camera.zoom < 0.1f)
+        {
+            m_camera.zoom = 0.1f;
+        }
+    }
+
+
 
     // --- ACTUALIZACION DE ENTIDADES ---
     
@@ -214,9 +246,6 @@ game_screen GameplayScreen::update()
         }
     }
 
-    // -> se actualiza el suelo de acuerdo a las dimensiones actuales
-    m_floor = { 0, (float) GetScreenHeight() - 50, (float) GetScreenWidth(), 50 };
-
     return game_screen::NONE;
 }
 
@@ -244,10 +273,13 @@ void GameplayScreen::render()
         }
     }
 
-    
     // -> se inicia modo de renderizado 2d con la cámara
+    // NOTE: todo lo que se dibuje dentro de bloque BeginMode2D se renderiza desde la perspectiva de la 
+    // cámara
     BeginMode2D(m_camera);
 
+    // -> se dibuja el suelo
+    DrawRectangleRec(m_floor, DARKGRAY);
 
     // -> renderizar jugador
     if (m_player)
@@ -267,7 +299,6 @@ void GameplayScreen::render()
         bullet->render();
     }
 
-    DrawRectangleRec(m_floor, DARKGRAY);
 
     EndMode2D();
 

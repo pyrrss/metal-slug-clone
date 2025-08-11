@@ -10,7 +10,7 @@ namespace EnemyFactory
 
         // TODO: revisar y ajustar/equilibrar stats luego
         skeleton_stats.enemy_max_health = 100.0f;
-        skeleton_stats.enemy_speed = 250.0f;
+        skeleton_stats.enemy_speed = (float) GetRandomValue(150, 500);
         skeleton_stats.enemy_damage = 10.0f;
         skeleton_stats.enemy_score_points = 10;
         skeleton_stats.enemy_scale = 4.0f;

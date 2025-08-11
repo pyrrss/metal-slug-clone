@@ -67,29 +67,6 @@ void Enemy::update()
     m_velocity.x = m_movement_direction.x * m_enemy_stats.enemy_speed;
     m_position = Vector2Add(m_position, Vector2Scale(m_velocity, GetFrameTime()));
 
-        
-    // -> se verifica que jugador no salga de la pantalla horizontalmente
-    if (m_position.x < 0)
-    {
-        m_position.x = GetScreenWidth();
-    } 
-    else if (m_position.x > GetScreenWidth())
-    {
-        m_position.x = 0;
-    }
-
-    // -> se verifica que jugador no salga de la pantalla verticalmente
-    if (m_position.y > GetScreenHeight())
-    {
-        m_position.y = 0;
-    }
-    else if (m_position.y < 0)
-    {
-        m_position.y = GetScreenHeight();
-    }
-
-
-
     // -> se actualiza rectangulo de enemigo
     m_bounding_box.x = m_position.x;
     m_bounding_box.y = m_position.y;

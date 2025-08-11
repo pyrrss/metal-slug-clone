@@ -17,8 +17,8 @@ void PatrollingStrategy::update(Enemy& owner, Player& player)
 
     m_patrol_timer += GetFrameTime(); 
 
-    // -> cada 2 segundos cambia de dirección
-    if (m_patrol_timer >= 2.0f)
+    // -> cada ciertos segundos cambia de dirección
+    if (m_patrol_timer >= GetRandomValue(1, 3))
     {
         m_patrol_timer = 0.0f;
         m_patrol_direction.x *= -1;
